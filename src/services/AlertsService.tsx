@@ -55,7 +55,7 @@ export default class AlertsService {
       if (!subscriptionId) return [];
 
       const response = await fetch(
-        `{API_URL}/alerts?subscriptionId=${subscriptionId}`,
+        `${API_URL}/alerts?subscriptionId=${subscriptionId}`,
       );
 
       if (!response.ok) {
