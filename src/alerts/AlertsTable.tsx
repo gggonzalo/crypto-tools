@@ -15,6 +15,7 @@ import AlertsService from "@/services/AlertsService";
 
 function AlertsTable() {
   const symbol = useAlertsStore((state) => state.symbol);
+  const symbolInfo = useAlertsStore((state) => state.symbolInfo);
   const alerts = useAlertsStore((state) => state.alerts);
 
   const [areOtherPairsAlertsHidden, setHideOtherPairsAlerts] = useState(false);
@@ -81,8 +82,17 @@ function AlertsTable() {
                 </span>
               </TableCell>
               <TableCell>Price Alert</TableCell>
-              <TableCell>{alert.valueOnCreation} USDT</TableCell>
-              <TableCell>{alert.valueTarget} USDT</TableCell>
+              <TableCell className="flex flex-col">
+                <span>
+                  {alert.valueOnCreation} {symbolInfo?.quoteAsset}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(alert.createdAt).toLocaleString()}
+                </span>
+              </TableCell>
+              <TableCell>
+                {alert.valueTarget} {symbolInfo?.quoteAsset}
+              </TableCell>
               <TableCell>{alert.status}</TableCell>
               <TableCell>
                 <Button
