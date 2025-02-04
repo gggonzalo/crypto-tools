@@ -87,13 +87,23 @@ export default class CandlesService {
       );
     }
 
-    const response = await fetch(`${API_URL}/candles?${params.toString()}`);
-    const candles = await response.json();
+    try {
+      const response = await fetch(`${API_URL}/candles?${params.toString()}`);
+      const candles = await response.json();
 
-    return candles.map((candle: Candle) => ({
-      ...candle,
-      time: convertCandleEpochToLocal(candle.time),
-    }));
+      return candles.map((candle: Candle) => ({
+        ...candle,
+        time: convertCandleEpochToLocal(candle.time),
+      }));
+    } catch {
+      toast({
+        title: "Error",
+        description: "An error occurred while trying to fetch candles data.",
+        variant: "destructive",
+      });
+
+      return [];
+    }
   }
 
   private static unsubscribe(
