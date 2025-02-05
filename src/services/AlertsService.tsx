@@ -76,7 +76,7 @@ export default class AlertsService {
 
   static async deleteAlert(alertId: string): Promise<boolean> {
     try {
-      const response = await fetch(`/alerts/${alertId}`, {
+      const response = await fetch(`${API_URL}/alerts/${alertId}`, {
         method: "DELETE",
       });
 
