@@ -77,6 +77,12 @@ function Alerts() {
 
   return (
     <div className="flex flex-col gap-2">
+      {pushNotificationsStatus === "unloaded" && (
+        <p className="self-start rounded-md bg-destructive px-2 py-1 text-sm text-destructive-foreground">
+          Your browser does not support push notifications. If you are on
+          mobile, you need to add the app to your home screen.
+        </p>
+      )}
       {pushNotificationsStatus === "inactive" && (
         <p className="self-start rounded-md bg-destructive px-2 py-1 text-sm text-destructive-foreground">
           To create and receive alerts, please{" "}
