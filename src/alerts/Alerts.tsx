@@ -80,7 +80,8 @@ function Alerts() {
       {pushNotificationsStatus === "unloaded" && (
         <p className="self-start rounded-md bg-destructive px-2 py-1 text-sm text-destructive-foreground">
           Your browser does not support push notifications. If you are on
-          mobile, you need to add the app to your home screen.
+          mobile, you need to add the app to your home screen from a supported
+          browser.
         </p>
       )}
       {pushNotificationsStatus === "inactive" && (
