@@ -37,22 +37,26 @@ function App() {
     OneSignal.init({
       appId: "207a026a-1076-44d4-bb6c-f2a5804b122f",
       allowLocalhostAsSecureOrigin: true,
-    }).then(() => {
-      useAppStore.setState({
-        pushNotificationsStatus: OneSignal.Notifications.permission
-          ? "active"
-          : "inactive",
-      });
+    })
+      .then(() => {
+        useAppStore.setState({
+          pushNotificationsStatus: OneSignal.Notifications.permission
+            ? "active"
+            : "inactive",
+        });
 
-      OneSignal.Notifications.addEventListener(
-        "permissionChange",
-        (newPermission) => {
-          useAppStore.setState({
-            pushNotificationsStatus: newPermission ? "active" : "inactive",
-          });
-        },
-      );
-    });
+        OneSignal.Notifications.addEventListener(
+          "permissionChange",
+          (newPermission) => {
+            useAppStore.setState({
+              pushNotificationsStatus: newPermission ? "active" : "inactive",
+            });
+          },
+        );
+      })
+      .catch(() => {
+        useAppStore.setState({ pushNotificationsStatus: "unavailable" });
+      });
   }, []);
 
   return (

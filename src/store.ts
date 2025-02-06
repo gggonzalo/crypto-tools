@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 type State = {
-  pushNotificationsStatus: "unloaded" | "active" | "inactive";
+  pushNotificationsStatus: "unloaded" | "active" | "inactive" | "unavailable";
 };
 
 const useAppStore = create<State>()(() => ({
