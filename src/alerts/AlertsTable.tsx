@@ -81,8 +81,9 @@ function AlertsTable() {
                   {alert.symbol}
                 </span>
               </TableCell>
-              <TableCell>Price Alert</TableCell>
-              <TableCell className="flex flex-col">
+              {/* TODO: Remove hardcoded value when more types are added */}
+              <TableCell className="text-nowrap">Price Alert</TableCell>
+              <TableCell className="flex flex-col text-nowrap">
                 <span>
                   {alert.valueOnCreation} {symbolInfo?.quoteAsset}
                 </span>
@@ -90,10 +91,10 @@ function AlertsTable() {
                   {new Date(alert.createdAt).toLocaleString()}
                 </span>
               </TableCell>
-              <TableCell>
+              <TableCell className="text-nowrap">
                 {alert.valueTarget} {symbolInfo?.quoteAsset}
               </TableCell>
-              <TableCell>{alert.status}</TableCell>
+              <TableCell className="text-nowrap">{alert.status}</TableCell>
               <TableCell>
                 <Button
                   variant="ghost"
