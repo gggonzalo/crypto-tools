@@ -190,7 +190,6 @@ function SymbolCandleStickChart() {
   // Watermark
   useEffect(() => {
     const chart = chartApi.current;
-
     if (!chart) return;
 
     if (!symbolInfo) {
@@ -232,7 +231,7 @@ function SymbolCandleStickChart() {
     });
   }, [
     isLoadingHistoricalCandles,
-    symbolInfo?.symbol,
+    symbolInfo,
     symbolInfoStatus,
   ]);
 
