@@ -54,7 +54,10 @@ function SymbolCandleStickChart() {
     });
     chartApi.current = chart;
     
-    if (!symbolInfo) return;
+    if (!symbolInfo) {
+        chart.remove();
+        chartApi.current = null;
+    }
 
     const series = chart.addCandlestickSeries({
       upColor: "#26a69a",
@@ -178,6 +181,7 @@ function SymbolCandleStickChart() {
           .unsubscribeVisibleLogicalRangeChange(tryLoadHistoricalCandles);
 
       chart.remove();
+      chartApi.current = null;
     };
   }, [interval, symbolInfo]);
 
@@ -188,20 +192,20 @@ function SymbolCandleStickChart() {
     if (!chart) return;
 
     if (!symbolInfo) {
-      if (symbolInfoStatus === "loading") {
-        chart.applyOptions({
-          watermark: {
-            visible: true,
-            fontSize: 24,
-            horzAlign: "center",
-            vertAlign: "center",
-            color: "rgba(115, 115, 115)",
-            text: "Loading symbol info...",
-          },
-        });
+        if (symbolInfoStatus === "loading") {
+          chart.applyOptions({
+            watermark: {
+              visible: true,
+              fontSize: 24,
+              horzAlign: "center",
+              vertAlign: "center",
+              color: "rgba(115, 115, 115)",
+              text: "Loading symbol info...",
+            },
+          });
   
-        return;
-      }
+          return;
+        }
     }
 
     if (isLoadingHistoricalCandles) {
