@@ -86,8 +86,6 @@ function SymbolCandleStickChart() {
       },
     });
 
-    console.log("Help");
-
     const candleUpdatesController = new AbortController();
 
     let candleUpdatesSubscription: { unsubscribe: () => void } | null = null;
@@ -206,7 +204,11 @@ function SymbolCandleStickChart() {
       // Clean series
       seriesApi.setData([]);
       seriesApi.applyOptions({
-        priceFormat: { type: "price", precision: 2, minMove: 0.01 },
+        priceFormat: {
+          type: "price",
+          precision: symbolInfo.priceFormat.precision,
+          minMove: symbolInfo.priceFormat.minMove,
+        },
       });
     };
   }, [chartApi, interval, seriesApi, symbolInfo]);
