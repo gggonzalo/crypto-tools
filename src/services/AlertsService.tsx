@@ -63,7 +63,7 @@ export default class AlertsService {
       }
 
       return await response.json();
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "An error occurred while fetching alerts.",

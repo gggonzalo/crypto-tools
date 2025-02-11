@@ -12,6 +12,7 @@ type State = {
 
 const useAlertsStore = create<State>()(
   persist(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     (_) => ({
       symbol: "BTCUSDT",
       symbolInfo: null,

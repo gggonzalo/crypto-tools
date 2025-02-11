@@ -17,6 +17,7 @@ import useAppStore from "@/store";
 import AlertsService from "@/services/AlertsService";
 import SymbolsService from "@/services/SymbolsService";
 import AlertsTable from "./AlertsTable";
+import { useDocumentVisibility } from "@mantine/hooks";
 
 function Alerts() {
   const pushNotificationsStatus = useAppStore(
@@ -26,7 +27,11 @@ function Alerts() {
   const interval = useAlertsStore((state) => state.interval);
   const alerts = useAlertsStore((state) => state.alerts);
 
+  const documentState = useDocumentVisibility();
+
   useEffect(() => {
+    if (documentState === "hidden") return;
+
     const symbolInfoAbortController = new AbortController();
 
     const fetchSymbolInfo = async (newSymbol: string) => {
@@ -59,7 +64,7 @@ function Alerts() {
     return () => {
       symbolInfoAbortController.abort();
     };
-  }, [symbol]);
+  }, [documentState, symbol]);
 
   const fetchUserAlerts = useCallback(async () => {
     if (pushNotificationsStatus === "unloaded") return;

@@ -112,7 +112,7 @@ function AlertsForm({ onAlertCreated }: Props) {
 
   useEffect(() => {
     form.reset();
-  }, [symbolInfo]);
+  }, [form, symbolInfo]);
 
   useEffect(() => {
     if (!symbolInfo?.symbol) return;
