@@ -11,7 +11,6 @@ import {
   createChart,
 } from "lightweight-charts";
 import { useEffect, useRef, useState } from "react";
-import { useDocumentVisibility } from "@mantine/hooks";
 
 const CANDLES_REQUEST_LIMIT = 500;
 
@@ -28,8 +27,6 @@ function SymbolCandleStickChart() {
   // Refs
   const chartContainer = useRef<HTMLDivElement>(null);
   const lastHistoricalCandlesEndTimeRequested = useRef<number | null>(null);
-
-  const documentState = useDocumentVisibility();
 
   // Effects
   // Chart creation
@@ -65,7 +62,7 @@ function SymbolCandleStickChart() {
 
   // Chart data
   useEffect(() => {
-    if (documentState === "hidden" || !chartApi || !symbolInfo) return;
+    if (!chartApi || !symbolInfo) return;
 
     const series = chartApi.addCandlestickSeries({
       upColor: "#26a69a",
@@ -198,7 +195,7 @@ function SymbolCandleStickChart() {
       });
       chartApi.removeSeries(series);
     };
-  }, [chartApi, documentState, interval, symbolInfo]);
+  }, [chartApi, interval, symbolInfo]);
 
   // Watermark
   useEffect(() => {
