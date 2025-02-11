@@ -57,6 +57,8 @@ function SymbolCandleStickChart() {
     if (!symbolInfo) {
         chart.remove();
         chartApi.current = null;
+
+        return;
     }
 
     const series = chart.addCandlestickSeries({
