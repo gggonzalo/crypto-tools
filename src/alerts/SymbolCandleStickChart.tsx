@@ -113,6 +113,9 @@ function SymbolCandleStickChart() {
         crosshair: {
           mode: CrosshairMode.Normal,
         },
+        rightPriceScale: {
+          autoScale: true,
+        },
         timeScale: {
           timeVisible: interval.includes("Minute") || interval.includes("Hour"),
         },
@@ -194,13 +197,6 @@ function SymbolCandleStickChart() {
           .timeScale()
           .unsubscribeVisibleLogicalRangeChange(tryLoadHistoricalCandles);
 
-      // Clean chart
-      chartApi.applyOptions({
-        crosshair: {
-          mode: CrosshairMode.Hidden,
-        },
-      });
-
       // Clean series
       seriesApi.setData([]);
       seriesApi.applyOptions({
@@ -210,6 +206,14 @@ function SymbolCandleStickChart() {
           minMove: symbolInfo.priceFormat.minMove,
         },
       });
+
+      // Clean chart
+      chartApi.applyOptions({
+        crosshair: {
+          mode: CrosshairMode.Hidden,
+        },
+      });
+      chartApi.timeScale().resetTimeScale();
     };
   }, [chartApi, interval, seriesApi, symbolInfo]);
 
