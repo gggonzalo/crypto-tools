@@ -56,7 +56,7 @@ function SymbolCandleStickChart() {
     
     if (!symbolInfo) return;
 
-    const series = chartApi.addCandlestickSeries({
+    const series = chart.addCandlestickSeries({
       upColor: "#26a69a",
       downColor: "#ef5350",
       borderVisible: false,
@@ -161,7 +161,7 @@ function SymbolCandleStickChart() {
         .subscribeVisibleLogicalRangeChange(tryLoadHistoricalCandles);
 
       // Initial trigger
-      tryLoadHistoricalCandles(chartApi.timeScale().getVisibleLogicalRange());
+      tryLoadHistoricalCandles(chart.timeScale().getVisibleLogicalRange());
     };
 
     loadChartDataSources();
@@ -183,13 +183,13 @@ function SymbolCandleStickChart() {
 
   // Watermark
   useEffect(() => {
-    const chartApi = chartApi.current;
+    const chart = chartApi.current;
 
-    if (!chartApi) return;
+    if (!chart) return;
 
     if (!symbolInfo) {
       if (symbolInfoStatus === "loading") {
-        chartApi.applyOptions({
+        chart.applyOptions({
           watermark: {
             visible: true,
             fontSize: 24,
@@ -205,7 +205,7 @@ function SymbolCandleStickChart() {
     }
 
     if (isLoadingHistoricalCandles) {
-      chartApi.applyOptions({
+      chart.applyOptions({
         watermark: {
           visible: true,
           fontSize: 24,
@@ -219,7 +219,7 @@ function SymbolCandleStickChart() {
       return;
     }
 
-    chartApi.applyOptions({
+    chart.applyOptions({
       watermark: {
         visible: false,
       },
