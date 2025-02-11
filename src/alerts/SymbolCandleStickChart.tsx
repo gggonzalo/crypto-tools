@@ -5,6 +5,7 @@ import {
   ColorType,
   CrosshairMode,
   IChartApi,
+  ISeriesApi,
   LogicalRange,
   LogicalRangeChangeEventHandler,
   Time,
@@ -20,17 +21,19 @@ function SymbolCandleStickChart() {
   const symbolInfoStatus = useAlertsStore((state) => state.symbolInfoStatus);
   const interval = useAlertsStore((state) => state.interval);
 
+  const [chartApi, setChartApi] = useState<IChartApi | null>(null);
+  const [seriesApi, setSeriesApi] = useState<ISeriesApi<"Candlestick"> | null>(
+    null,
+  );
   const [isLoadingHistoricalCandles, setIsLoadingHistoricalCandles] =
     useState(false);
 
   // Refs
   const chartContainer = useRef<HTMLDivElement>(null);
-  const chartApi = useRef<IChartApi | null>(null);
- 
   const lastHistoricalCandlesEndTimeRequested = useRef<number | null>(null);
 
   // Effects
-  // Chart creation and data loading
+  // Chart creation
   useEffect(() => {
     if (!chartContainer.current) return;
 
@@ -49,17 +52,8 @@ function SymbolCandleStickChart() {
       timeScale: {
         borderColor: "rgb(115, 115, 115)",
         secondsVisible: false,
-        timeVisible: interval.includes("Minute") || interval.includes("Hour"),
       },
     });
-    chartApi.current = chart;
-    
-    if (!symbolInfo) {
-        chart.remove();
-        chartApi.current = null;
-
-        return;
-    }
 
     const series = chart.addCandlestickSeries({
       upColor: "#26a69a",
@@ -69,13 +63,30 @@ function SymbolCandleStickChart() {
       wickDownColor: "#ef5350",
     });
 
-    series.applyOptions({
+    setChartApi(chart);
+    setSeriesApi(series);
+
+    return () => {
+      chart.remove();
+
+      setChartApi(null);
+      setSeriesApi(null);
+    };
+  }, []);
+
+  // Chart data
+  useEffect(() => {
+    if (!chartApi || !seriesApi || !symbolInfo) return;
+
+    seriesApi.applyOptions({
       priceFormat: {
         type: "price",
         precision: symbolInfo.priceFormat.precision,
         minMove: symbolInfo.priceFormat.minMove,
       },
     });
+
+    console.log("Help");
 
     const candleUpdatesController = new AbortController();
 
@@ -95,14 +106,17 @@ function SymbolCandleStickChart() {
 
         if (candleUpdatesController.signal.aborted) return;
 
-        series.setData(initialCandles as CandlestickData<Time>[]);
+        seriesApi.setData(initialCandles as CandlestickData<Time>[]);
       } finally {
         setIsLoadingHistoricalCandles(false);
       }
 
-      chart.applyOptions({
+      chartApi.applyOptions({
         crosshair: {
           mode: CrosshairMode.Normal,
+        },
+        timeScale: {
+          timeVisible: interval.includes("Minute") || interval.includes("Hour"),
         },
       });
 
@@ -116,7 +130,7 @@ function SymbolCandleStickChart() {
             time: candle.time as Time,
           };
 
-          series.update(chartCandle);
+          seriesApi.update(chartCandle);
         },
       );
 
@@ -126,12 +140,12 @@ function SymbolCandleStickChart() {
       ) => {
         if (!newVisibleLogicalRange) return;
 
-        const barsInfo = series.barsInLogicalRange(newVisibleLogicalRange);
+        const barsInfo = seriesApi.barsInLogicalRange(newVisibleLogicalRange);
 
         // If there are less than 100 bars before the visible range, try to load more data
         if (barsInfo && barsInfo.barsBefore < 100) {
-          const firstBarTime = series.data()[0].time as number;
-          const secondBarTime = series.data()[1].time as number;
+          const firstBarTime = seriesApi.data()[0].time as number;
+          const secondBarTime = seriesApi.data()[1].time as number;
           const timeDifference = secondBarTime - firstBarTime;
 
           const newHistoricalCandlesEndTime = firstBarTime - timeDifference;
@@ -154,19 +168,19 @@ function SymbolCandleStickChart() {
 
           if (candleUpdatesController.signal.aborted) return;
 
-          series.setData([
+          seriesApi.setData([
             ...(historicalCandles as CandlestickData<Time>[]),
-            ...series.data(),
+            ...seriesApi.data(),
           ]);
         }
       };
 
-      chart
+      chartApi
         .timeScale()
         .subscribeVisibleLogicalRangeChange(tryLoadHistoricalCandles);
 
       // Initial trigger
-      tryLoadHistoricalCandles(chart.timeScale().getVisibleLogicalRange());
+      tryLoadHistoricalCandles(chartApi.timeScale().getVisibleLogicalRange());
     };
 
     loadChartDataSources();
@@ -178,42 +192,51 @@ function SymbolCandleStickChart() {
 
       // Historical candles cleanup
       if (tryLoadHistoricalCandles)
-        chart
+        chartApi
           .timeScale()
           .unsubscribeVisibleLogicalRangeChange(tryLoadHistoricalCandles);
 
-      chart.remove();
-      chartApi.current = null;
+      // Clean chart
+      chartApi.applyOptions({
+        crosshair: {
+          mode: CrosshairMode.Hidden,
+        },
+      });
+
+      // Clean series
+      seriesApi.setData([]);
+      seriesApi.applyOptions({
+        priceFormat: { type: "price", precision: 2, minMove: 0.01 },
+      });
     };
-  }, [interval, symbolInfo]);
+  }, [chartApi, interval, seriesApi, symbolInfo]);
 
   // Watermark
   useEffect(() => {
-    const chart = chartApi.current;
-    if (!chart) return;
+    if (!chartApi) return;
 
     if (!symbolInfo) {
-        if (symbolInfoStatus === "loading") {
-          chart.applyOptions({
-            watermark: {
-              visible: true,
-              fontSize: 24,
-              horzAlign: "center",
-              vertAlign: "center",
-              color: "rgba(115, 115, 115)",
-              text: "Loading symbol info...",
-            },
-          });
-  
-          return;
-        }
+      if (symbolInfoStatus === "loading") {
+        chartApi.applyOptions({
+          watermark: {
+            visible: true,
+            fontSize: 20,
+            horzAlign: "center",
+            vertAlign: "center",
+            color: "rgba(115, 115, 115)",
+            text: "Loading symbol info...",
+          },
+        });
+      }
+
+      return;
     }
 
     if (isLoadingHistoricalCandles) {
-      chart.applyOptions({
+      chartApi.applyOptions({
         watermark: {
           visible: true,
-          fontSize: 24,
+          fontSize: 20,
           horzAlign: "center",
           vertAlign: "center",
           color: "rgba(115, 115, 115)",
@@ -224,16 +247,12 @@ function SymbolCandleStickChart() {
       return;
     }
 
-    chart.applyOptions({
+    chartApi.applyOptions({
       watermark: {
         visible: false,
       },
     });
-  }, [
-    isLoadingHistoricalCandles,
-    symbolInfo,
-    symbolInfoStatus,
-  ]);
+  }, [chartApi, isLoadingHistoricalCandles, symbolInfo, symbolInfoStatus]);
 
   return <div ref={chartContainer} className="size-full"></div>;
 }
