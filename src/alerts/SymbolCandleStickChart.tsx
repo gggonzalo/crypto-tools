@@ -115,6 +115,7 @@ function SymbolCandleStickChart() {
         },
         rightPriceScale: {
           autoScale: true,
+          visible: true,
         },
         timeScale: {
           timeVisible: interval.includes("Minute") || interval.includes("Hour"),
@@ -199,18 +200,14 @@ function SymbolCandleStickChart() {
 
       // Clean series
       seriesApi.setData([]);
-      seriesApi.applyOptions({
-        priceFormat: {
-          type: "price",
-          precision: symbolInfo.priceFormat.precision,
-          minMove: symbolInfo.priceFormat.minMove,
-        },
-      });
 
       // Clean chart
       chartApi.applyOptions({
         crosshair: {
           mode: CrosshairMode.Hidden,
+        },
+        rightPriceScale: {
+          visible: false,
         },
       });
       chartApi.timeScale().resetTimeScale();
