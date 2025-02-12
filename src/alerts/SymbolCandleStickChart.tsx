@@ -223,7 +223,7 @@ function SymbolCandleStickChart() {
         chartApi.applyOptions({
           watermark: {
             visible: true,
-            fontSize: 20,
+            fontSize: 24,
             horzAlign: "center",
             vertAlign: "center",
             color: "rgba(115, 115, 115)",
@@ -239,7 +239,7 @@ function SymbolCandleStickChart() {
       chartApi.applyOptions({
         watermark: {
           visible: true,
-          fontSize: 20,
+          fontSize: 24,
           horzAlign: "center",
           vertAlign: "center",
           color: "rgba(115, 115, 115)",
