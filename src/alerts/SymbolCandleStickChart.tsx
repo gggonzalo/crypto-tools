@@ -48,7 +48,6 @@ function SymbolCandleStickChart() {
       },
       rightPriceScale: {
         borderColor: "rgb(115, 115, 115)",
-        visible: false,
       },
       timeScale: {
         borderColor: "rgb(115, 115, 115)",
