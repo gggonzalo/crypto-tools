@@ -62,6 +62,12 @@ function SymbolCandleStickChart() {
       wickDownColor: "#ef5350",
     });
 
+    chart.applyOptions({
+      rightPriceScale: {
+        visible: false,
+      },
+    });
+
     setChartApi(chart);
     setSeriesApi(series);
 
