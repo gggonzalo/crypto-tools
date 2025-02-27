@@ -10,14 +10,18 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import useAlertsStore from "@/alerts/store";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AlertsService from "@/services/AlertsService";
+import { SymbolInfo } from "@/types";
+import SymbolsService from "@/services/SymbolsService";
+import { formatPrice } from "@/utils";
 
 function AlertsTable() {
   const symbol = useAlertsStore((state) => state.symbol);
-  const symbolInfo = useAlertsStore((state) => state.symbolInfo);
   const alerts = useAlertsStore((state) => state.alerts);
-
+  const [alertsSymbolInfos, setAlertsSymbolInfos] = useState<
+    Record<string, SymbolInfo>
+  >({});
   const [areOtherPairsAlertsHidden, setHideOtherPairsAlerts] = useState(false);
 
   const filteredAlerts = useMemo(() => {
@@ -39,6 +43,26 @@ function AlertsTable() {
       }));
     }
   };
+
+  const fetchMissingSymbolsInfo = async (symbolsToFetch: string[]) => {
+    const infos = await SymbolsService.fetchSymbolsInfo(symbolsToFetch);
+
+    setAlertsSymbolInfos((prev) => ({
+      ...prev,
+      ...infos,
+    }));
+  };
+
+  useEffect(() => {
+    const missingSymbols = alerts
+      .map((alert) => alert.symbol)
+      .filter((symbol) => !alertsSymbolInfos[symbol]);
+
+    const uniqueMissingSymbols = [...new Set(missingSymbols)];
+
+    if (uniqueMissingSymbols.length > 0)
+      fetchMissingSymbolsInfo(uniqueMissingSymbols);
+  }, [alerts, alertsSymbolInfos]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -69,43 +93,54 @@ function AlertsTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredAlerts.map((alert) => (
-            <TableRow key={alert.id}>
-              <TableCell>
-                <span
-                  className="cursor-pointer font-semibold"
-                  onClick={() =>
-                    useAlertsStore.setState({ symbol: alert.symbol })
-                  }
-                >
-                  {alert.symbol}
-                </span>
-              </TableCell>
-              {/* TODO: Remove hardcoded value when more types are added */}
-              <TableCell className="text-nowrap">Price Alert</TableCell>
-              <TableCell className="flex flex-col text-nowrap">
-                <span>
-                  {alert.valueOnCreation} {symbolInfo?.quoteAsset}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(alert.createdAt).toLocaleString()}
-                </span>
-              </TableCell>
-              <TableCell className="text-nowrap">
-                {alert.valueTarget} {symbolInfo?.quoteAsset}
-              </TableCell>
-              <TableCell className="text-nowrap">{alert.status}</TableCell>
-              <TableCell>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDeleteAlert(alert.id)}
-                >
-                  <Trash2 className="size-4 text-destructive" />
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+          {filteredAlerts.map((alert) => {
+            const alertSymbolInfo = alertsSymbolInfos[alert.symbol];
+
+            if (!alertSymbolInfo) return null;
+
+            return (
+              <TableRow key={alert.id}>
+                <TableCell>
+                  <span
+                    className="cursor-pointer font-semibold"
+                    onClick={() =>
+                      useAlertsStore.setState({ symbol: alert.symbol })
+                    }
+                  >
+                    {alert.symbol}
+                  </span>
+                </TableCell>
+                {/* TODO: Remove hardcoded value when more types are added */}
+                <TableCell className="text-nowrap">Price Alert</TableCell>
+                <TableCell className="flex flex-col text-nowrap">
+                  <span>
+                    {formatPrice(
+                      alert.valueOnCreation,
+                      alertSymbolInfo.priceFormat,
+                    )}{" "}
+                    {alertSymbolInfo.quoteAsset}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(alert.createdAt).toLocaleString()}
+                  </span>
+                </TableCell>
+                <TableCell className="text-nowrap">
+                  {formatPrice(alert.valueTarget, alertSymbolInfo.priceFormat)}{" "}
+                  {alertSymbolInfo.quoteAsset}
+                </TableCell>
+                <TableCell className="text-nowrap">{alert.status}</TableCell>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDeleteAlert(alert.id)}
+                  >
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>

@@ -1,7 +1,7 @@
-import OneSignal from "react-onesignal";
 import { toast } from "@/hooks/use-toast";
 import { Alert } from "@/types";
 import { API_URL } from "@/constants";
+import PushNotificationsService from "./PushNotificationsService";
 
 export default class AlertsService {
   static async createAlert(symbol: string, valueTarget: number) {
@@ -14,7 +14,7 @@ export default class AlertsService {
         body: JSON.stringify({
           symbol,
           valueTarget,
-          subscriptionId: OneSignal.User.PushSubscription.id,
+          subscriptionId: PushNotificationsService.getSubscriptionId(),
         }),
       });
 
@@ -50,7 +50,7 @@ export default class AlertsService {
 
   static async getUserAlerts(): Promise<Alert[]> {
     try {
-      const subscriptionId = OneSignal.User.PushSubscription.id;
+      const subscriptionId = PushNotificationsService.getSubscriptionId();
 
       if (!subscriptionId) return [];
 

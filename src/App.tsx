@@ -1,7 +1,6 @@
 import Alerts from "@/alerts/Alerts";
 import { useEffect, useState } from "react";
-import OneSignal from "react-onesignal";
-import useAppStore from "@/store";
+import PushNotificationsService from "@/services/PushNotificationsService";
 import {
   Route,
   Routes,
@@ -32,27 +31,8 @@ function App() {
     setPage(location.pathname);
   }, [location.pathname]);
 
-  // Browser web push requirements reference => https://documentation.onesignal.com/docs/web-push-setup-faq
   useEffect(() => {
-    OneSignal.init({
-      appId: "207a026a-1076-44d4-bb6c-f2a5804b122f",
-      allowLocalhostAsSecureOrigin: true,
-    }).then(() => {
-      useAppStore.setState({
-        pushNotificationsStatus: OneSignal.Notifications.permission
-          ? "active"
-          : "inactive",
-      });
-
-      OneSignal.Notifications.addEventListener(
-        "permissionChange",
-        (newPermission) => {
-          useAppStore.setState({
-            pushNotificationsStatus: newPermission ? "active" : "inactive",
-          });
-        },
-      );
-    });
+    PushNotificationsService.initialize();
   }, []);
 
   return (

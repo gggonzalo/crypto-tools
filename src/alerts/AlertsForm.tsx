@@ -20,7 +20,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { mapIntervalToLabel } from "@/utils";
+import { formatPrice, mapIntervalToLabel } from "@/utils";
 import useAlertsStore from "@/alerts/store";
 import CandlesService from "@/services/CandlesService";
 import { Button } from "@/components/ui/button";
@@ -176,6 +176,8 @@ function AlertsForm({ onAlertCreated }: Props) {
     }
 
     const renderHelperText = () => {
+      if (!symbolInfo) return null;
+
       const priceAsNumber = Number(price);
 
       if (!priceAsNumber || !currentPrice) return;
@@ -190,7 +192,7 @@ function AlertsForm({ onAlertCreated }: Props) {
           </p>
           <div className="grid grid-cols-3">
             <span className="justify-self-end font-semibold">
-              {currentPrice.toFixed(symbolInfo.priceFormat.precision)}
+              {formatPrice(currentPrice, symbolInfo.priceFormat)}
             </span>
             {isAlertBullish ? (
               <TrendingUp className="size-6 shrink-0 justify-self-center stroke-[#26a69a]" />
@@ -198,7 +200,7 @@ function AlertsForm({ onAlertCreated }: Props) {
               <TrendingDown className="size-6 shrink-0 justify-self-center stroke-[#ef5350]" />
             )}
             <span className="justify-self-start font-semibold">
-              {priceAsNumber.toFixed(symbolInfo.priceFormat.precision)}
+              {formatPrice(priceAsNumber, symbolInfo.priceFormat)}
             </span>
           </div>
         </div>

@@ -1,7 +1,6 @@
 import SymbolCandleStickChart from "@/alerts/SymbolCandleStickChart";
 import SymbolsCombobox from "@/components/SymbolsCombobox";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import OneSignal from "react-onesignal";
 import {
   Select,
   SelectContent,
@@ -16,6 +15,7 @@ import AlertsForm from "@/alerts/AlertsForm";
 import useAppStore from "@/store";
 import AlertsService from "@/services/AlertsService";
 import SymbolsService from "@/services/SymbolsService";
+import PushNotificationsService from "@/services/PushNotificationsService";
 import AlertsTable from "./AlertsTable";
 import { useDocumentVisibility } from "@mantine/hooks";
 
@@ -30,36 +30,33 @@ function Alerts() {
   const documentState = useDocumentVisibility();
 
   useEffect(() => {
-    if (documentState === "hidden") return;
+    if (documentState === "hidden" || !symbol) return;
 
     const symbolInfoAbortController = new AbortController();
 
-    const fetchSymbolInfo = async (newSymbol: string) => {
-      if (!newSymbol) return;
-
+    const fetchSymbolInfo = async () => {
       useAlertsStore.setState({
-        symbol: newSymbol,
+        symbol,
         symbolInfo: null,
         symbolInfoStatus: "loading",
       });
 
-      const newSymbolInfo = await SymbolsService.fetchSymbolInfo(newSymbol);
+      const symbolInfos = await SymbolsService.fetchSymbolsInfo([symbol]);
 
       if (symbolInfoAbortController.signal.aborted) return;
 
-      if (!newSymbolInfo) {
+      if (!symbolInfos[symbol]) {
         useAlertsStore.setState({ symbolInfoStatus: "unloaded" });
-
         return;
       }
 
       useAlertsStore.setState({
-        symbolInfo: newSymbolInfo,
+        symbolInfo: symbolInfos[symbol],
         symbolInfoStatus: "loaded",
       });
     };
 
-    fetchSymbolInfo(symbol);
+    fetchSymbolInfo();
 
     return () => {
       symbolInfoAbortController.abort();
@@ -94,11 +91,7 @@ function Alerts() {
           To create and receive alerts, please{" "}
           <span
             className="cursor-pointer underline"
-            onClick={() =>
-              OneSignal.Slidedown.promptPush({
-                force: true,
-              })
-            }
+            onClick={() => PushNotificationsService.promptNotifications()}
           >
             enable push notifications
           </span>{" "}

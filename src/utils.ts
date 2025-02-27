@@ -1,4 +1,4 @@
-import { Interval } from "@/types";
+import { Interval, PriceFormat } from "@/types";
 
 export function convertLocalEpochToUtcDate(localEpoch: number) {
   return new Date(
@@ -42,3 +42,6 @@ export function mapIntervalToLabel(interval: Interval) {
       return "1M";
   }
 }
+
+export const formatPrice = (price: number, format: PriceFormat) =>
+  price.toFixed(format?.precision);
