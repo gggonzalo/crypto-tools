@@ -44,4 +44,4 @@ export function mapIntervalToLabel(interval: Interval) {
 }
 
 export const formatPrice = (price: number, format: PriceFormat) =>
-  price.toFixed(format?.precision);
+  price.toFixed(format.precision);

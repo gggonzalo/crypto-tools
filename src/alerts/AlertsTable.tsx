@@ -96,8 +96,6 @@ function AlertsTable() {
           {filteredAlerts.map((alert) => {
             const alertSymbolInfo = alertsSymbolInfos[alert.symbol];
 
-            if (!alertSymbolInfo) return null;
-
             return (
               <TableRow key={alert.id}>
                 <TableCell>
@@ -114,19 +112,34 @@ function AlertsTable() {
                 <TableCell className="text-nowrap">Price Alert</TableCell>
                 <TableCell className="flex flex-col text-nowrap">
                   <span>
-                    {formatPrice(
-                      alert.valueOnCreation,
-                      alertSymbolInfo.priceFormat,
-                    )}{" "}
-                    {alertSymbolInfo.quoteAsset}
+                    {alertSymbolInfo ? (
+                      <>
+                        {formatPrice(
+                          alert.valueOnCreation,
+                          alertSymbolInfo.priceFormat,
+                        )}{" "}
+                        {alertSymbolInfo.quoteAsset}
+                      </>
+                    ) : (
+                      "-"
+                    )}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {new Date(alert.createdAt).toLocaleString()}
                   </span>
                 </TableCell>
                 <TableCell className="text-nowrap">
-                  {formatPrice(alert.valueTarget, alertSymbolInfo.priceFormat)}{" "}
-                  {alertSymbolInfo.quoteAsset}
+                  {alertSymbolInfo ? (
+                    <>
+                      {formatPrice(
+                        alert.valueTarget,
+                        alertSymbolInfo.priceFormat,
+                      )}{" "}
+                      {alertSymbolInfo.quoteAsset}
+                    </>
+                  ) : (
+                    "-"
+                  )}
                 </TableCell>
                 <TableCell className="text-nowrap">{alert.status}</TableCell>
                 <TableCell>
