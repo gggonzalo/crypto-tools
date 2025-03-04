@@ -34,6 +34,12 @@ function AlertsTable() {
       : sortedAlerts;
   }, [alerts, areOtherPairsAlertsHidden, symbol]);
 
+  const handleAlertSymbolClick = (symbol: string) => {
+    useAlertsStore.setState({ symbol: symbol });
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleDeleteAlert = async (alertId: string) => {
     const success = await AlertsService.deleteAlert(alertId);
 
@@ -101,9 +107,7 @@ function AlertsTable() {
                 <TableCell>
                   <span
                     className="cursor-pointer font-semibold"
-                    onClick={() =>
-                      useAlertsStore.setState({ symbol: alert.symbol })
-                    }
+                    onClick={() => handleAlertSymbolClick(alert.symbol)}
                   >
                     {alert.symbol}
                   </span>

@@ -40,6 +40,14 @@ export interface Candle {
   close: number;
 }
 
+export interface RsiCandle {
+  time: number;
+  high?: number;
+  low?: number;
+  open?: number;
+  close?: number;
+}
+
 export type AlertStatus = "Active" | "Triggered";
 
 export interface Alert {
