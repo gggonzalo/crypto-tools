@@ -8,10 +8,13 @@ import {
   ISeriesApi,
   LogicalRange,
   LogicalRangeChangeEventHandler,
+  MouseEventParams,
   Time,
   createChart,
 } from "lightweight-charts";
 import { useEffect, useRef, useState } from "react";
+import RsiSeriesService from "@/series/RsiSeriesService";
+import { getCrosshairDataPoint, syncCrosshair } from "@/utils";
 
 const CANDLES_REQUEST_LIMIT = 500;
 
@@ -21,23 +24,28 @@ function SymbolCandleStickChart() {
   const symbolInfoStatus = useAlertsStore((state) => state.symbolInfoStatus);
   const interval = useAlertsStore((state) => state.interval);
 
-  const [chartApi, setChartApi] = useState<IChartApi | null>(null);
-  const [seriesApi, setSeriesApi] = useState<ISeriesApi<"Candlestick"> | null>(
-    null,
-  );
+  const [dataChartApi, setDataChartApi] = useState<IChartApi | null>(null);
+  const [dataSeriesApi, setDataSeriesApi] =
+    useState<ISeriesApi<"Candlestick"> | null>(null);
+  const [rsiChartApi, setRsiChartApi] = useState<IChartApi | null>(null);
+  const [rsiSeriesApi, setRsiSeriesApi] =
+    useState<ISeriesApi<"Candlestick"> | null>(null);
+
   const [isLoadingHistoricalCandles, setIsLoadingHistoricalCandles] =
     useState(false);
 
   // Refs
-  const chartContainer = useRef<HTMLDivElement>(null);
+  const dataChartContainer = useRef<HTMLDivElement>(null);
+  const rsiChartContainer = useRef<HTMLDivElement>(null);
   const lastHistoricalCandlesEndTimeRequested = useRef<number | null>(null);
+  const rsiSeriesService = useRef<RsiSeriesService>(new RsiSeriesService());
 
   // Effects
-  // Chart creation
+  // Charts creation
   useEffect(() => {
-    if (!chartContainer.current) return;
+    if (!dataChartContainer.current || !rsiChartContainer.current) return;
 
-    const chart = createChart(chartContainer.current, {
+    const dataChart = createChart(dataChartContainer.current, {
       autoSize: true,
       crosshair: {
         mode: CrosshairMode.Hidden,
@@ -54,7 +62,7 @@ function SymbolCandleStickChart() {
       },
     });
 
-    const series = chart.addCandlestickSeries({
+    const dataSeries = dataChart.addCandlestickSeries({
       upColor: "#26a69a",
       downColor: "#ef5350",
       borderVisible: false,
@@ -62,28 +70,86 @@ function SymbolCandleStickChart() {
       wickDownColor: "#ef5350",
     });
 
-    chart.applyOptions({
+    dataChart.applyOptions({
       rightPriceScale: {
         visible: false,
       },
     });
 
-    setChartApi(chart);
-    setSeriesApi(series);
+    setDataChartApi(dataChart);
+    setDataSeriesApi(dataSeries);
 
+    const rsiChart = createChart(rsiChartContainer.current, {
+      autoSize: true,
+      crosshair: {
+        mode: CrosshairMode.Hidden,
+      },
+      layout: {
+        background: { type: ColorType.Solid, color: "white" },
+        textColor: "rgb(115, 115, 115)",
+      },
+      rightPriceScale: {
+        borderColor: "rgb(115, 115, 115)",
+      },
+      timeScale: {
+        borderColor: "rgb(115, 115, 115)",
+      },
+    });
+
+    const rsiSeries = rsiChart.addCandlestickSeries({
+      upColor: "#26a69a",
+      downColor: "#ef5350",
+      borderVisible: false,
+      wickUpColor: "#26a69a",
+      wickDownColor: "#ef5350",
+    });
+
+    rsiSeries.createPriceLine({
+      price: 70,
+      color: "#0003",
+      lineWidth: 2,
+      lineStyle: 3,
+      axisLabelVisible: true,
+    });
+    rsiSeries.createPriceLine({
+      price: 30,
+      color: "#0003",
+      lineWidth: 2,
+      lineStyle: 3,
+      axisLabelVisible: true,
+    });
+
+    rsiChart.applyOptions({
+      rightPriceScale: {
+        visible: false,
+      },
+    });
+
+    setRsiChartApi(rsiChart);
+    setRsiSeriesApi(rsiSeries);
     return () => {
-      chart.remove();
+      dataChart.remove();
+      rsiChart.remove();
 
-      setChartApi(null);
-      setSeriesApi(null);
+      setDataChartApi(null);
+      setDataSeriesApi(null);
+      setRsiChartApi(null);
+      setRsiSeriesApi(null);
     };
   }, []);
 
-  // Chart data
+  // Charts data
   useEffect(() => {
-    if (!chartApi || !seriesApi || !symbolInfo) return;
+    if (
+      !dataChartApi ||
+      !dataSeriesApi ||
+      !rsiChartApi ||
+      !rsiSeriesApi ||
+      !symbolInfo
+    )
+      return;
 
-    seriesApi.applyOptions({
+    dataSeriesApi.applyOptions({
       priceFormat: {
         type: "price",
         precision: symbolInfo.priceFormat.precision,
@@ -92,6 +158,31 @@ function SymbolCandleStickChart() {
     });
 
     const candleUpdatesController = new AbortController();
+
+    // Charts sync handlers
+    const handleDataChartVisibleRangeChange = (
+      timeRange: LogicalRange | null,
+    ) => {
+      if (timeRange) rsiChartApi.timeScale().setVisibleLogicalRange(timeRange);
+    };
+
+    const handleDataChartCrosshairMove = (param: MouseEventParams<Time>) => {
+      const dataPoint = getCrosshairDataPoint(dataSeriesApi, param);
+
+      syncCrosshair(rsiChartApi, rsiSeriesApi, dataPoint);
+    };
+
+    const handleRsiChartVisibleRangeChange = (
+      timeRange: LogicalRange | null,
+    ) => {
+      if (timeRange) dataChartApi.timeScale().setVisibleLogicalRange(timeRange);
+    };
+
+    const handleRsiChartCrosshairMove = (param: MouseEventParams<Time>) => {
+      const dataPoint = getCrosshairDataPoint(rsiSeriesApi, param);
+
+      syncCrosshair(dataChartApi, dataSeriesApi, dataPoint);
+    };
 
     let candleUpdatesSubscription: { unsubscribe: () => void } | null = null;
     let tryLoadHistoricalCandles: LogicalRangeChangeEventHandler | null = null;
@@ -109,12 +200,14 @@ function SymbolCandleStickChart() {
 
         if (candleUpdatesController.signal.aborted) return;
 
-        seriesApi.setData(initialCandles as CandlestickData<Time>[]);
+        dataSeriesApi.setData(initialCandles as CandlestickData<Time>[]);
+
+        rsiSeriesService.current.setData(initialCandles);
       } finally {
         setIsLoadingHistoricalCandles(false);
       }
 
-      chartApi.applyOptions({
+      dataChartApi.applyOptions({
         crosshair: {
           mode: CrosshairMode.Normal,
         },
@@ -127,6 +220,37 @@ function SymbolCandleStickChart() {
         },
       });
 
+      rsiChartApi.applyOptions({
+        crosshair: {
+          mode: CrosshairMode.Normal,
+        },
+        timeScale: {
+          timeVisible: interval.includes("Minute") || interval.includes("Hour"),
+        },
+      });
+
+      // Using setTimeout to ensure the rsi series is setup after the data series is ready
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      rsiSeriesApi.setData(
+        rsiSeriesService.current.getRsiData() as CandlestickData<Time>[],
+      );
+      rsiSeriesApi.priceScale().applyOptions({
+        autoScale: true,
+        minimumWidth: dataSeriesApi.priceScale().width(),
+        visible: true,
+      });
+
+      // Charts sync subscriptions
+      dataChartApi
+        .timeScale()
+        .subscribeVisibleLogicalRangeChange(handleDataChartVisibleRangeChange);
+      dataChartApi.subscribeCrosshairMove(handleDataChartCrosshairMove);
+      rsiChartApi
+        .timeScale()
+        .subscribeVisibleLogicalRangeChange(handleRsiChartVisibleRangeChange);
+      rsiChartApi.subscribeCrosshairMove(handleRsiChartCrosshairMove);
+
       // Candle updates
       candleUpdatesSubscription = CandlesService.subscribeToCandleUpdates(
         symbolInfo.symbol,
@@ -137,7 +261,12 @@ function SymbolCandleStickChart() {
             time: candle.time as Time,
           };
 
-          seriesApi.update(chartCandle);
+          dataSeriesApi.update(chartCandle);
+
+          rsiSeriesService.current.update(candle);
+          rsiSeriesApi.update(
+            rsiSeriesService.current.getCurrentRsiCandle() as CandlestickData<Time>,
+          );
         },
       );
 
@@ -147,12 +276,14 @@ function SymbolCandleStickChart() {
       ) => {
         if (!newVisibleLogicalRange) return;
 
-        const barsInfo = seriesApi.barsInLogicalRange(newVisibleLogicalRange);
+        const barsInfo = dataSeriesApi.barsInLogicalRange(
+          newVisibleLogicalRange,
+        );
 
         // If there are less than 100 bars before the visible range, try to load more data
         if (barsInfo && barsInfo.barsBefore < 100) {
-          const firstBarTime = seriesApi.data()[0].time as number;
-          const secondBarTime = seriesApi.data()[1].time as number;
+          const firstBarTime = dataSeriesApi.data()[0].time as number;
+          const secondBarTime = dataSeriesApi.data()[1].time as number;
           const timeDifference = secondBarTime - firstBarTime;
 
           const newHistoricalCandlesEndTime = firstBarTime - timeDifference;
@@ -175,19 +306,29 @@ function SymbolCandleStickChart() {
 
           if (candleUpdatesController.signal.aborted) return;
 
-          seriesApi.setData([
+          dataSeriesApi.setData([
             ...(historicalCandles as CandlestickData<Time>[]),
-            ...seriesApi.data(),
+            ...dataSeriesApi.data(),
           ]);
+
+          rsiSeriesService.current.setData([
+            ...historicalCandles,
+            ...rsiSeriesService.current.getData(),
+          ]);
+          rsiSeriesApi.setData(
+            rsiSeriesService.current.getRsiData() as CandlestickData<Time>[],
+          );
         }
       };
 
-      chartApi
+      dataChartApi
         .timeScale()
         .subscribeVisibleLogicalRangeChange(tryLoadHistoricalCandles);
 
       // Initial trigger
-      tryLoadHistoricalCandles(chartApi.timeScale().getVisibleLogicalRange());
+      tryLoadHistoricalCandles(
+        dataChartApi.timeScale().getVisibleLogicalRange(),
+      );
     };
 
     loadChartDataSources();
@@ -199,15 +340,28 @@ function SymbolCandleStickChart() {
 
       // Historical candles cleanup
       if (tryLoadHistoricalCandles)
-        chartApi
+        dataChartApi
           .timeScale()
           .unsubscribeVisibleLogicalRangeChange(tryLoadHistoricalCandles);
 
-      // Clean series
-      seriesApi.setData([]);
+      // Charts sync cleanup
+      dataChartApi
+        .timeScale()
+        .unsubscribeVisibleLogicalRangeChange(
+          handleDataChartVisibleRangeChange,
+        );
+      dataChartApi.unsubscribeCrosshairMove(handleDataChartCrosshairMove);
+      rsiChartApi
+        .timeScale()
+        .unsubscribeVisibleLogicalRangeChange(handleRsiChartVisibleRangeChange);
+      rsiChartApi.unsubscribeCrosshairMove(handleRsiChartCrosshairMove);
 
-      // Clean chart
-      chartApi.applyOptions({
+      // Clean series
+      dataSeriesApi.setData([]);
+      rsiSeriesApi.setData([]);
+
+      // Clean charts
+      dataChartApi.applyOptions({
         crosshair: {
           mode: CrosshairMode.Hidden,
         },
@@ -215,17 +369,34 @@ function SymbolCandleStickChart() {
           visible: false,
         },
       });
-      chartApi.timeScale().resetTimeScale();
+      dataChartApi.timeScale().resetTimeScale();
+
+      rsiChartApi.applyOptions({
+        crosshair: {
+          mode: CrosshairMode.Hidden,
+        },
+        rightPriceScale: {
+          visible: false,
+        },
+      });
+      rsiChartApi.timeScale().resetTimeScale();
     };
-  }, [chartApi, interval, seriesApi, symbolInfo]);
+  }, [
+    dataChartApi,
+    interval,
+    dataSeriesApi,
+    symbolInfo,
+    rsiChartApi,
+    rsiSeriesApi,
+  ]);
 
   // Watermark
   useEffect(() => {
-    if (!chartApi) return;
+    if (!dataChartApi) return;
 
     if (!symbolInfo) {
       if (symbolInfoStatus === "loading") {
-        chartApi.applyOptions({
+        dataChartApi.applyOptions({
           watermark: {
             visible: true,
             fontSize: 24,
@@ -241,7 +412,7 @@ function SymbolCandleStickChart() {
     }
 
     if (isLoadingHistoricalCandles) {
-      chartApi.applyOptions({
+      dataChartApi.applyOptions({
         watermark: {
           visible: true,
           fontSize: 24,
@@ -255,14 +426,19 @@ function SymbolCandleStickChart() {
       return;
     }
 
-    chartApi.applyOptions({
+    dataChartApi.applyOptions({
       watermark: {
         visible: false,
       },
     });
-  }, [chartApi, isLoadingHistoricalCandles, symbolInfo, symbolInfoStatus]);
+  }, [dataChartApi, isLoadingHistoricalCandles, symbolInfo, symbolInfoStatus]);
 
-  return <div ref={chartContainer} className="size-full"></div>;
+  return (
+    <div className="flex h-full flex-col gap-2">
+      <div ref={dataChartContainer} className="grow" />
+      <div ref={rsiChartContainer} className="h-[150px]" />
+    </div>
+  );
 }
 
 export default SymbolCandleStickChart;

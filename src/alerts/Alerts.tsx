@@ -146,7 +146,7 @@ function Alerts() {
               </Select>
             </div>
           </CardHeader>
-          <CardContent className="h-[24rem]">
+          <CardContent className="h-[32rem]">
             <SymbolCandleStickChart />
           </CardContent>
         </Card>

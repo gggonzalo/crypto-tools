@@ -6,7 +6,7 @@ interface RsiCalculationResult {
   avgLoss: number;
 }
 
-export default class RsiCandlesSeries {
+export default class RsiSeriesService {
   private data: Candle[] = [];
   private rsiData: RsiCandle[] = [];
   private avgCloseGain: number = 0;

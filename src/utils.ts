@@ -1,4 +1,11 @@
 import { Interval, PriceFormat } from "@/types";
+import {
+  ISeriesApi,
+  MouseEventParams,
+  Time,
+  IChartApi,
+  CustomData,
+} from "lightweight-charts";
 
 export function convertLocalEpochToUtcDate(localEpoch: number) {
   return new Date(
@@ -45,3 +52,27 @@ export function mapIntervalToLabel(interval: Interval) {
 
 export const formatPrice = (price: number, format: PriceFormat) =>
   price.toFixed(format.precision);
+
+export function getCrosshairDataPoint(
+  series: ISeriesApi<"Candlestick">,
+  param: MouseEventParams<Time>,
+) {
+  if (!param.time) return null;
+
+  const dataPoint = param.seriesData.get(series);
+  return dataPoint || null;
+}
+
+export function syncCrosshair(
+  chart: IChartApi,
+  series: ISeriesApi<"Candlestick">,
+  dataPoint: CustomData<Time> | null,
+) {
+  if (dataPoint) {
+    chart.setCrosshairPosition(0, dataPoint.time, series);
+
+    return;
+  }
+
+  chart.clearCrosshairPosition();
+}
