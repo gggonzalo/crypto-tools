@@ -12,7 +12,7 @@ import useAlertsStore from "@/alerts/store";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEffect, useMemo, useState } from "react";
 import AlertsService from "@/services/AlertsService";
-import { SymbolInfo } from "@/types";
+import { Alert, SymbolInfo } from "@/types";
 import SymbolsService from "@/services/SymbolsService";
 import { formatPrice } from "@/utils";
 
@@ -70,6 +70,56 @@ function AlertsTable() {
       fetchMissingSymbolsInfo(uniqueMissingSymbols);
   }, [alerts, alertsSymbolInfos]);
 
+  const renderAlertRow = (alert: Alert) => {
+    const alertSymbolInfo = alertsSymbolInfos[alert.symbol];
+
+    const valueOnCreation =
+      alert.type === "Price"
+        ? alertSymbolInfo
+          ? `${formatPrice(alert.valueOnCreation, alertSymbolInfo.priceFormat)} ${alertSymbolInfo.quoteAsset}`
+          : "-"
+        : alert.valueOnCreation;
+    const valueTarget =
+      alert.type === "Price"
+        ? alertSymbolInfo
+          ? `${formatPrice(alert.valueTarget, alertSymbolInfo.priceFormat)} ${alertSymbolInfo.quoteAsset}`
+          : "-"
+        : alert.valueTarget;
+
+    return (
+      <TableRow key={alert.id}>
+        <TableCell>
+          <span
+            className="cursor-pointer font-semibold"
+            onClick={() => handleAlertSymbolClick(alert.symbol)}
+          >
+            {alert.symbol}
+          </span>
+        </TableCell>
+        <TableCell className="text-nowrap">
+          {alert.type === "Price" ? "Price alert" : "RSI alert"}
+        </TableCell>
+        <TableCell className="flex flex-col text-nowrap">
+          <span>{valueOnCreation}</span>
+          <span className="text-xs text-muted-foreground">
+            {new Date(alert.createdAt).toLocaleString()}
+          </span>
+        </TableCell>
+        <TableCell className="text-nowrap">{valueTarget}</TableCell>
+        <TableCell className="text-nowrap">{alert.status}</TableCell>
+        <TableCell>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDeleteAlert(alert.id)}
+          >
+            <Trash2 className="size-4 text-destructive" />
+          </Button>
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col justify-between gap-2 md:flex-row">
@@ -99,65 +149,7 @@ function AlertsTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredAlerts.map((alert) => {
-            const alertSymbolInfo = alertsSymbolInfos[alert.symbol];
-
-            return (
-              <TableRow key={alert.id}>
-                <TableCell>
-                  <span
-                    className="cursor-pointer font-semibold"
-                    onClick={() => handleAlertSymbolClick(alert.symbol)}
-                  >
-                    {alert.symbol}
-                  </span>
-                </TableCell>
-                {/* TODO: Remove hardcoded value when more types are added */}
-                <TableCell className="text-nowrap">Price Alert</TableCell>
-                <TableCell className="flex flex-col text-nowrap">
-                  <span>
-                    {alertSymbolInfo ? (
-                      <>
-                        {formatPrice(
-                          alert.valueOnCreation,
-                          alertSymbolInfo.priceFormat,
-                        )}{" "}
-                        {alertSymbolInfo.quoteAsset}
-                      </>
-                    ) : (
-                      "-"
-                    )}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(alert.createdAt).toLocaleString()}
-                  </span>
-                </TableCell>
-                <TableCell className="text-nowrap">
-                  {alertSymbolInfo ? (
-                    <>
-                      {formatPrice(
-                        alert.valueTarget,
-                        alertSymbolInfo.priceFormat,
-                      )}{" "}
-                      {alertSymbolInfo.quoteAsset}
-                    </>
-                  ) : (
-                    "-"
-                  )}
-                </TableCell>
-                <TableCell className="text-nowrap">{alert.status}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteAlert(alert.id)}
-                  >
-                    <Trash2 className="size-4 text-destructive" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            );
-          })}
+          {filteredAlerts.map((alert) => renderAlertRow(alert))}
         </TableBody>
       </Table>
     </div>

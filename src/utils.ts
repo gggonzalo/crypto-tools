@@ -69,7 +69,7 @@ export function syncCrosshair(
   dataPoint: CustomData<Time> | null,
 ) {
   if (dataPoint) {
-    chart.setCrosshairPosition(0, dataPoint.time, series);
+    chart.setCrosshairPosition(-100, dataPoint.time, series);
 
     return;
   }

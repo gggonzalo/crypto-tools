@@ -1,21 +1,38 @@
 import { toast } from "@/hooks/use-toast";
-import { Alert } from "@/types";
+import { Alert, AlertType, Interval } from "@/types";
 import { API_URL } from "@/constants";
 import PushNotificationsService from "./PushNotificationsService";
 
 export default class AlertsService {
-  static async createAlert(symbol: string, valueTarget: number) {
+  static async createAlert(
+    symbol: string,
+    interval: Interval,
+    valueTarget: number,
+    type: AlertType,
+  ) {
     try {
+      const createAlertBody =
+        type === "Price"
+          ? JSON.stringify({
+              symbol,
+              valueTarget,
+              type,
+              subscriptionId: PushNotificationsService.getSubscriptionId(),
+            })
+          : JSON.stringify({
+              symbol,
+              rsiInterval: interval,
+              valueTarget,
+              type,
+              subscriptionId: PushNotificationsService.getSubscriptionId(),
+            });
+
       const response = await fetch(`${API_URL}/alerts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          symbol,
-          valueTarget,
-          subscriptionId: PushNotificationsService.getSubscriptionId(),
-        }),
+        body: createAlertBody,
       });
 
       if (!response.ok) {
@@ -33,7 +50,7 @@ export default class AlertsService {
       toast({
         title: "Success",
         description:
-          "You will receive a notification when the price hits the target.",
+          "You will receive a notification when the value reaches the target.",
       });
 
       return true;

@@ -436,7 +436,10 @@ function SymbolCandleStickChart() {
   return (
     <div className="flex h-full flex-col gap-2">
       <div ref={dataChartContainer} className="grow" />
-      <div ref={rsiChartContainer} className="h-[150px]" />
+      <div className="flex flex-col gap-0.5">
+        <span className="font-semibold">RSI</span>
+        <div ref={rsiChartContainer} className="h-[140px]" />
+      </div>
     </div>
   );
 }

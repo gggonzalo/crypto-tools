@@ -36,28 +36,42 @@ import useAppStore from "@/store";
 import AlertsService from "@/services/AlertsService";
 import { symbolsDisplayInfo } from "@/constants";
 
-const formSchema = z.object({
-  alertType: z.union([z.literal("PriceAlert"), z.literal("RsiAlert")]),
-  price: z.string().superRefine((val, ctx) => {
-    if (!val) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Value can't be empty",
-      });
+const formSchema = z
+  .object({
+    type: z.union([z.literal("Price"), z.literal("Rsi")]),
+    valueTarget: z.string().superRefine((val, ctx) => {
+      if (!val) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Value can't be empty",
+        });
 
-      return;
+        return;
+      }
+
+      if (isNaN(Number(val))) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Value must be a number",
+        });
+
+        return;
+      }
+    }),
+  })
+  .superRefine((values, ctx) => {
+    if (values.type === "Rsi") {
+      const rsiValue = Number(values.valueTarget);
+
+      if (rsiValue < 0 || rsiValue > 100) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "RSI value must be between 0 and 100",
+          path: ["valueTarget"],
+        });
+      }
     }
-
-    if (isNaN(Number(val))) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Value must be a number",
-      });
-
-      return;
-    }
-  }),
-});
+  });
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -77,33 +91,37 @@ function AlertsForm({ onAlertCreated }: Props) {
 
   const form = useForm<FormValues>({
     defaultValues: {
-      alertType: "PriceAlert",
-      price: "",
+      type: "Price",
+      valueTarget: "",
     },
     mode: "onChange",
     resolver: zodResolver(formSchema),
   });
 
-  const price = useWatch({ control: form.control, name: "price" });
+  const [type, valueTarget] = useWatch({
+    control: form.control,
+    name: ["type", "valueTarget"],
+  });
 
   const handleFormSubmit = async (data: FormValues) => {
     if (!symbolInfo) return;
 
     setIsFormSubmitting(true);
 
-    // TODO: Use the alert type to create the alert when it's ready in the backend
-    const { price: valueTarget } = data;
+    const { type, valueTarget } = data;
 
     try {
       const success = await AlertsService.createAlert(
         symbolInfo.symbol,
+        interval,
         Number(valueTarget),
+        type,
       );
 
       if (success) {
         onAlertCreated();
 
-        form.reset();
+        form.setValue("valueTarget", "");
       }
     } finally {
       setIsFormSubmitting(false);
@@ -111,7 +129,7 @@ function AlertsForm({ onAlertCreated }: Props) {
   };
 
   useEffect(() => {
-    form.reset();
+    form.setValue("valueTarget", "");
   }, [form, symbolInfo]);
 
   useEffect(() => {
@@ -176,9 +194,9 @@ function AlertsForm({ onAlertCreated }: Props) {
     }
 
     const renderHelperText = () => {
-      if (!symbolInfo) return null;
+      if (!symbolInfo || type === "Rsi") return null;
 
-      const priceAsNumber = Number(price);
+      const priceAsNumber = Number(valueTarget);
 
       if (!priceAsNumber || !currentPrice) return;
 
@@ -214,7 +232,7 @@ function AlertsForm({ onAlertCreated }: Props) {
             <div className="flex flex-col space-y-2">
               <FormField
                 control={form.control}
-                name="alertType"
+                name="type"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Alert type</FormLabel>
@@ -222,7 +240,11 @@ function AlertsForm({ onAlertCreated }: Props) {
                       <Select
                         value={field.value}
                         disabled={isFormSubmitting}
-                        onValueChange={field.onChange}
+                        onValueChange={(newValue) => {
+                          field.onChange(newValue);
+
+                          form.setValue("valueTarget", "");
+                        }}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -230,13 +252,8 @@ function AlertsForm({ onAlertCreated }: Props) {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="PriceAlert">
-                            Price Alert
-                          </SelectItem>
-                          {/* TODO: Re-enable when this is ready in the backend */}
-                          <SelectItem value="RsiAlert" disabled>
-                            RSI Alert
-                          </SelectItem>
+                          <SelectItem value="Price">Price Alert</SelectItem>
+                          <SelectItem value="Rsi">RSI Alert</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>
@@ -246,14 +263,18 @@ function AlertsForm({ onAlertCreated }: Props) {
               />
               <FormField
                 control={form.control}
-                name="price"
+                name="valueTarget"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Target price</FormLabel>
+                    <FormLabel>Target value</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder={`Price in ${symbolInfo.quoteAsset}`}
+                        placeholder={
+                          type === "Price"
+                            ? `Price in ${symbolInfo.quoteAsset}`
+                            : "Value between 0 and 100"
+                        }
                         autoComplete="off"
                       />
                     </FormControl>
