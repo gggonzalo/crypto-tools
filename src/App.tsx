@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import Positions from "./positions/Positions";
 
 function App() {
   const navigate = useNavigate();
@@ -45,6 +46,7 @@ function App() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="/alerts">Alerts</SelectItem>
+              <SelectItem value="/positions">Positions</SelectItem>
               <SelectItem value="/portfolio" disabled>
                 Portfolio
               </SelectItem>
@@ -54,6 +56,7 @@ function App() {
       </ul>
       <Routes>
         <Route path="/alerts" element={<Alerts />}></Route>
+        <Route path="/positions" element={<Positions />}></Route>
         <Route path="*" element={<Navigate to="/alerts" replace />} />
       </Routes>
     </div>

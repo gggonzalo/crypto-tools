@@ -1,9 +1,3 @@
-// TODO: Reorg later
-
-export interface SymbolDisplayInfo {
-  logo: string;
-}
-
 export interface PriceFormat {
   minMove: number;
   precision: number;
@@ -47,25 +41,3 @@ export interface RsiCandle {
   open?: number;
   close?: number;
 }
-
-export type AlertStatus = "Active" | "Triggered";
-export type AlertType = "Price" | "Rsi";
-
-export interface PriceAlert {
-  type: "Price";
-}
-
-export interface RsiAlert {
-  type: "Rsi";
-  interval: Interval;
-}
-
-export type Alert = (PriceAlert | RsiAlert) & {
-  id: string;
-  symbol: string;
-  status: AlertStatus;
-  subscriptionId: string;
-  createdAt: string;
-  valueOnCreation: number;
-  valueTarget: number;
-};

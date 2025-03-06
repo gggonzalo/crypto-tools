@@ -1,6 +1,7 @@
+import { Interval, SymbolInfo } from "@/common/types";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Alert, Interval, SymbolInfo } from "@/types";
+import { Alert } from "./types";
 
 type State = {
   symbol: string;

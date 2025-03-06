@@ -9,7 +9,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import useAlertsStore from "@/alerts/store";
-import { Interval } from "@/types";
 import { useCallback, useEffect } from "react";
 import AlertsForm from "@/alerts/AlertsForm";
 import useAppStore from "@/store";
@@ -18,6 +17,7 @@ import SymbolsService from "@/services/SymbolsService";
 import PushNotificationsService from "@/services/PushNotificationsService";
 import AlertsTable from "./AlertsTable";
 import { useDocumentVisibility } from "@mantine/hooks";
+import { Interval } from "@/common/types";
 
 function Alerts() {
   const pushNotificationsStatus = useAppStore(

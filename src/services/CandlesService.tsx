@@ -1,6 +1,6 @@
+import { Candle } from "@/common/types";
 import { API_URL } from "@/constants";
 import { toast } from "@/hooks/use-toast";
-import { Candle } from "@/types";
 import { convertCandleEpochToLocal, convertLocalEpochToUtcDate } from "@/utils";
 import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 

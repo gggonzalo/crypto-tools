@@ -1,4 +1,4 @@
-import { Candle, RsiCandle } from "@/types";
+import { Candle, RsiCandle } from "@/common/types";
 
 interface RsiCalculationResult {
   rsi: number;

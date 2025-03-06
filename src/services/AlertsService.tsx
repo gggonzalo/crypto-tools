@@ -1,7 +1,8 @@
 import { toast } from "@/hooks/use-toast";
-import { Alert, AlertType, Interval } from "@/types";
 import { API_URL } from "@/constants";
 import PushNotificationsService from "./PushNotificationsService";
+import { Interval } from "@/common/types";
+import { AlertType, Alert } from "@/alerts/types";
 
 export default class AlertsService {
   static async createAlert(

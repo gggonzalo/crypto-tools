@@ -1,6 +1,8 @@
-import { SymbolDisplayInfo } from "./types";
-
 export const API_URL = import.meta.env.VITE_CRYPTO_TOOLS_API_URL;
+
+interface SymbolDisplayInfo {
+  logo: string;
+}
 
 export const symbolsDisplayInfo: Record<string, SymbolDisplayInfo> = {
   BTCUSDT: {

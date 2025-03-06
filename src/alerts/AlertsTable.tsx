@@ -12,9 +12,10 @@ import useAlertsStore from "@/alerts/store";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEffect, useMemo, useState } from "react";
 import AlertsService from "@/services/AlertsService";
-import { Alert, SymbolInfo } from "@/types";
 import SymbolsService from "@/services/SymbolsService";
 import { formatPrice } from "@/utils";
+import { SymbolInfo } from "@/common/types";
+import { Alert } from "./types";
 
 function AlertsTable() {
   const symbol = useAlertsStore((state) => state.symbol);
@@ -34,8 +35,10 @@ function AlertsTable() {
       : sortedAlerts;
   }, [alerts, areOtherPairsAlertsHidden, symbol]);
 
-  const handleAlertSymbolClick = (symbol: string) => {
-    useAlertsStore.setState({ symbol: symbol });
+  const handleAlertSymbolClick = (clickedSymbol: string) => {
+    if (clickedSymbol === symbol) return;
+
+    useAlertsStore.setState({ symbol: clickedSymbol });
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   };

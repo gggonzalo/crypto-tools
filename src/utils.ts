@@ -1,4 +1,4 @@
-import { Interval, PriceFormat } from "@/types";
+import { Interval, PriceFormat } from "@/common/types";
 import {
   ISeriesApi,
   MouseEventParams,
