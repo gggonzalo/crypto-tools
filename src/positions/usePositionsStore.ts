@@ -20,7 +20,11 @@ const usePositionsStore = create<State & Actions>()(
   persist(
     (set) => ({
       ...initialState,
-      reset: () => set(() => initialState),
+      reset: () =>
+        set((state) => ({
+          ...initialState,
+          newPositionSymbol: state.newPositionSymbol, // Preserve persisted state
+        })),
     }),
     {
       name: "persistent-positions-store",

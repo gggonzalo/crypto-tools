@@ -25,7 +25,14 @@ const initialState: State = {
 
 const useAlertsStore = create<State & Actions>()(
   persist(
-    (set) => ({ ...initialState, reset: () => set(() => initialState) }),
+    (set) => ({
+      ...initialState,
+      reset: () =>
+        set((state) => ({
+          ...initialState,
+          symbol: state.symbol, // Preserve persisted state
+        })),
+    }),
     {
       name: "persistent-alerts-store",
       partialize: (state) => ({ symbol: state.symbol }),
