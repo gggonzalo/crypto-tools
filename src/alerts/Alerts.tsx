@@ -25,7 +25,7 @@ function Alerts() {
   );
   const symbol = useAlertsStore((state) => state.symbol);
   const interval = useAlertsStore((state) => state.interval);
-  const alerts = useAlertsStore((state) => state.alerts);
+  const resetStore = useAlertsStore((state) => state.reset);
 
   const documentState = useDocumentVisibility();
 
@@ -76,6 +76,12 @@ function Alerts() {
   useEffect(() => {
     fetchUserAlerts();
   }, [fetchUserAlerts]);
+
+  useEffect(() => {
+    return () => {
+      resetStore();
+    };
+  }, [resetStore]);
 
   return (
     <div className="flex flex-col gap-2">
@@ -153,11 +159,9 @@ function Alerts() {
         <div className="col-span-3 lg:col-span-1">
           <AlertsForm onAlertCreated={fetchUserAlerts} />
         </div>
-        {pushNotificationsStatus === "active" && alerts.length > 0 && (
-          <div className="col-span-3 flex flex-col gap-4 lg:col-span-3">
-            <AlertsTable />
-          </div>
-        )}
+        <div className="col-span-3 flex flex-col gap-4 lg:col-span-3">
+          <AlertsTable />
+        </div>
       </div>
     </div>
   );

@@ -7,12 +7,20 @@ type State = {
   positions: Position[];
 };
 
-const usePositionsStore = create<State>()(
+type Actions = {
+  reset: () => void;
+};
+
+const initialState: State = {
+  newPositionSymbol: "BTCUSDT",
+  positions: [],
+};
+
+const usePositionsStore = create<State & Actions>()(
   persist(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    (_) => ({
-      newPositionSymbol: "BTCUSDT",
-      positions: [],
+    (set) => ({
+      ...initialState,
+      reset: () => set(() => initialState),
     }),
     {
       name: "persistent-positions-store",

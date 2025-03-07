@@ -51,6 +51,7 @@ const calculatePercentageChange = (
 function Positions() {
   // Store
   const positions = usePositionsStore((state) => state.positions);
+  const resetStore = usePositionsStore((state) => state.reset);
 
   // State
   const [showAddPositionForm, setShowAddPositionForm] = useState(false);
@@ -85,7 +86,9 @@ function Positions() {
     fetchPositions();
 
     return () => {
-      usePositionsStore.setState({ positions: [] });
+      usePositionsStore.setState({
+        positions: [],
+      });
     };
   }, [documentState, fetchPositions]);
 
@@ -137,6 +140,10 @@ function Positions() {
       candleUpdatesSubscription.unsubscribe();
     };
   }, [openPositions]);
+
+  useEffect(() => {
+    resetStore();
+  }, [resetStore]);
 
   // TODO: Test render when symbol info comes later than prices
   const renderOpenPositionRow = (position: Position) => {

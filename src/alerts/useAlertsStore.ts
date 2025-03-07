@@ -11,16 +11,21 @@ type State = {
   interval: Interval;
 };
 
-const useAlertsStore = create<State>()(
+type Actions = {
+  reset: () => void;
+};
+
+const initialState: State = {
+  symbol: "BTCUSDT",
+  symbolInfo: null,
+  symbolInfoStatus: "unloaded",
+  alerts: [],
+  interval: "OneMinute",
+};
+
+const useAlertsStore = create<State & Actions>()(
   persist(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    (_) => ({
-      symbol: "BTCUSDT",
-      symbolInfo: null,
-      symbolInfoStatus: "unloaded",
-      alerts: [],
-      interval: "OneMinute",
-    }),
+    (set) => ({ ...initialState, reset: () => set(() => initialState) }),
     {
       name: "persistent-alerts-store",
       partialize: (state) => ({ symbol: state.symbol }),
