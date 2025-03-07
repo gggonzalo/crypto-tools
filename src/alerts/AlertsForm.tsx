@@ -166,7 +166,8 @@ function AlertsForm({ onAlertCreated }: Props) {
             className="size-5"
             src={symbolsDisplayInfo[symbolInfo.symbol].logo}
           />
-          {symbolInfo.symbol}, {mapIntervalToLabel(interval)}
+          {symbolInfo.symbol}
+          {type === "Rsi" ? `, ${mapIntervalToLabel(interval)}` : null}
         </CardDescription>
       </CardHeader>
     );
