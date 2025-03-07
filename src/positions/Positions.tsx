@@ -223,10 +223,10 @@ function Positions() {
         </TableCell>
         <TableCell>
           <div className="flex gap-0.5">
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" disabled>
               <Pencil className="size-4 text-muted-foreground" />
             </Button>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" disabled>
               <CircleX className="size-4 text-destructive" />
             </Button>
             <Button
