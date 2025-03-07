@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
-import useAlertsStore from "@/alerts/store";
+import useAlertsStore from "@/alerts/useAlertsStore";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEffect, useMemo, useState } from "react";
 import AlertsService from "@/services/AlertsService";
@@ -54,7 +54,7 @@ function AlertsTable() {
   };
 
   const fetchMissingSymbolsInfo = async (symbolsToFetch: string[]) => {
-    const infos = await SymbolsService.fetchSymbolsInfo(symbolsToFetch);
+    const infos = await SymbolsService.getSymbolsInfo(symbolsToFetch);
 
     setAlertsSymbolInfos((prev) => ({
       ...prev,
@@ -69,8 +69,9 @@ function AlertsTable() {
 
     const uniqueMissingSymbols = [...new Set(missingSymbols)];
 
-    if (uniqueMissingSymbols.length > 0)
-      fetchMissingSymbolsInfo(uniqueMissingSymbols);
+    if (uniqueMissingSymbols.length === 0) return;
+
+    fetchMissingSymbolsInfo(uniqueMissingSymbols);
   }, [alerts, alertsSymbolInfos]);
 
   const renderAlertRow = (alert: Alert) => {
@@ -152,7 +153,15 @@ function AlertsTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredAlerts.map((alert) => renderAlertRow(alert))}
+          {!filteredAlerts.length ? (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center">
+                No alerts
+              </TableCell>
+            </TableRow>
+          ) : (
+            filteredAlerts.map((alert) => renderAlertRow(alert))
+          )}
         </TableBody>
       </Table>
     </div>

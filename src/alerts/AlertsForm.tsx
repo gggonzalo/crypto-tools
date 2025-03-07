@@ -14,14 +14,14 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { Plus, TrendingDown, TrendingUp } from "lucide-react";
+import { CirclePlus, TrendingDown, TrendingUp } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPrice, mapIntervalToLabel } from "@/utils";
-import useAlertsStore from "@/alerts/store";
+import useAlertsStore from "@/alerts/useAlertsStore";
 import CandlesService from "@/services/CandlesService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,21 +49,21 @@ const formSchema = z
         return;
       }
 
-      if (isNaN(Number(val))) {
+      const num = Number(val);
+
+      if (isNaN(num) || num <= 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Value must be a number",
+          message: "Value must be a positive number",
         });
-
-        return;
       }
     }),
   })
   .superRefine((values, ctx) => {
     if (values.type === "Rsi") {
-      const rsiValue = Number(values.valueTarget);
+      const num = Number(values.valueTarget);
 
-      if (rsiValue < 0 || rsiValue > 100) {
+      if (isNaN(num) || num < 0 || num > 100) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "RSI value must be between 0 and 100",
@@ -136,9 +136,9 @@ function AlertsForm({ onAlertCreated }: Props) {
     if (!symbolInfo?.symbol) return;
 
     const candleUpdatesSubscription = CandlesService.subscribeToCandleUpdates(
-      symbolInfo.symbol,
-      interval,
-      (candle) => setCurrentPrice(candle.close),
+      [symbolInfo.symbol],
+      [interval],
+      ({ candle }) => setCurrentPrice(candle.close),
     );
 
     return () => {
@@ -292,7 +292,7 @@ function AlertsForm({ onAlertCreated }: Props) {
                 pushNotificationsStatus !== "active" || isFormSubmitting
               }
             >
-              <Plus />
+              <CirclePlus />
               Create Alert
             </Button>
           </CardFooter>

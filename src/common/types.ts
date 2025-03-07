@@ -34,6 +34,12 @@ export interface Candle {
   close: number;
 }
 
+export interface SymbolIntervalCandle {
+  symbol: string;
+  interval: Interval;
+  candle: Candle;
+}
+
 export interface RsiCandle {
   time: number;
   high?: number;

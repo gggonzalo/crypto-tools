@@ -55,8 +55,8 @@ function App() {
         </li>
       </ul>
       <Routes>
-        <Route path="/alerts" element={<Alerts />}></Route>
-        <Route path="/positions" element={<Positions />}></Route>
+        <Route path="/alerts" element={<Alerts />} />
+        <Route path="/positions" element={<Positions />} />
         <Route path="*" element={<Navigate to="/alerts" replace />} />
       </Routes>
     </div>

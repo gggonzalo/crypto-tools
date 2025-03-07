@@ -2,7 +2,7 @@ import { API_URL } from "@/constants";
 import { toast } from "@/hooks/use-toast";
 
 export default class SymbolsService {
-  static async fetchSymbolsInfo(symbols: string[]) {
+  static async getSymbolsInfo(symbols: string[]) {
     try {
       const response = await fetch(`${API_URL}/symbols/${symbols.join(",")}`);
 

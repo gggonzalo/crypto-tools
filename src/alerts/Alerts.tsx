@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import useAlertsStore from "@/alerts/store";
+import useAlertsStore from "@/alerts/useAlertsStore";
 import { useCallback, useEffect } from "react";
 import AlertsForm from "@/alerts/AlertsForm";
 import useAppStore from "@/store";
@@ -41,7 +41,7 @@ function Alerts() {
         symbolInfoStatus: "loading",
       });
 
-      const symbolInfos = await SymbolsService.fetchSymbolsInfo([symbol]);
+      const symbolInfos = await SymbolsService.getSymbolsInfo([symbol]);
 
       if (symbolInfoAbortController.signal.aborted) return;
 

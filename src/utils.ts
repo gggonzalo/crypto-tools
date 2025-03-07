@@ -1,4 +1,4 @@
-import { Interval, PriceFormat } from "@/common/types";
+import { Interval, PriceFormat, QuantityFormat } from "@/common/types";
 import {
   ISeriesApi,
   MouseEventParams,
@@ -51,6 +51,9 @@ export function mapIntervalToLabel(interval: Interval) {
 }
 
 export const formatPrice = (price: number, format: PriceFormat) =>
+  price.toFixed(format.precision);
+
+export const formatQuantiy = (price: number, format: QuantityFormat) =>
   price.toFixed(format.precision);
 
 export function getCrosshairDataPoint(

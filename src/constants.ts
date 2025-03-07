@@ -32,4 +32,7 @@ export const symbolsDisplayInfo: Record<string, SymbolDisplayInfo> = {
   ATOMUSDT: {
     logo: "https://cryptologos.cc/logos/cosmos-atom-logo.svg",
   },
+  USDCUSDT: {
+    logo: "https://cryptologos.cc/logos/usd-coin-usdc-logo.svg",
+  },
 };

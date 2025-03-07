@@ -9,146 +9,231 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/components/utils";
 import { formatPrice } from "@/utils";
-import { CircleX, Pencil, Trash2 } from "lucide-react";
+import { CirclePlus, CircleX, Pencil, Trash2 } from "lucide-react";
 import { Position } from "./types";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { SymbolInfo } from "../common/types";
+import SymbolsService from "../services/SymbolsService";
+import CandlesService from "../services/CandlesService";
+import { useDocumentVisibility } from "@mantine/hooks";
+import PositionsService from "@/services/PositionsService";
+import {
+  DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogHeader,
+} from "../components/ui/dialog";
+import PositionsForm from "./PositionsForm";
+import usePositionsStore from "./usePositionsStore";
 
-const symbolInfo = {
-  symbol: "USDCUSDT",
-  baseAsset: "USDC",
-  quoteAsset: "USDT",
-  priceFormat: {
-    minMove: 0.0001,
-    precision: 4,
-  },
-  quantityFormat: {
-    minMove: 1,
-    precision: 0,
-  },
-};
-const currentPrice = 1.0004;
-
-const positions: Position[] = [
-  {
-    id: 1,
-    symbol: "USDCUSDT",
-    side: "Buy",
-    amount: 3500,
-    price: 0.9987,
-    tp: 1.0012,
-  },
-  {
-    id: 2,
-    symbol: "USDCUSDT",
-    side: "Buy",
-    amount: 1212,
-    price: 1.0017,
-    tp: 1.0035,
-  },
-  {
-    id: 3,
-    symbol: "USDCUSDT",
-    side: "Buy",
-    amount: 5000,
-    price: 0.9981,
-    tp: 1.0005,
-    endReason: "Closed",
-    endPrice: 1.0003,
-  },
-  {
-    id: 3,
-    symbol: "USDCUSDT",
-    side: "Sell",
-    amount: 12320,
-    price: 1.0021,
-    tp: 1.0005,
-    endReason: "Filled",
-  },
-];
-
-const calculateAssetChange = (
+const calculateQuoteAssetAmountChange = (
   side: string,
-  amount: number,
+  baseAssetAmount: number,
   previousPrice: number,
   currentPrice: number,
 ) => {
   return side === "Buy"
-    ? currentPrice * amount - previousPrice * amount
-    : previousPrice * amount - currentPrice * amount;
+    ? currentPrice * baseAssetAmount - previousPrice * baseAssetAmount
+    : previousPrice * baseAssetAmount - currentPrice * baseAssetAmount;
 };
 
 const calculatePercentageChange = (
-  amountChange: number,
-  amount: number,
-  price: number,
+  side: string,
+  previousPrice: number,
+  currentPrice: number,
 ) => {
-  return (amountChange / (price * amount)) * 100;
+  const change = ((currentPrice - previousPrice) / previousPrice) * 100;
+
+  return side === "Sell" ? -change : change;
 };
 
 function Positions() {
+  // Store
+  const positions = usePositionsStore((state) => state.positions);
+
+  // State
+  const [showAddPositionForm, setShowAddPositionForm] = useState(false);
+  const [positionsSymbolInfos, setPositonsSymbolInfos] = useState<
+    Record<string, SymbolInfo>
+  >({});
+  const [positionsSymbolPrices, setPositonsSymbolPrices] = useState<
+    Record<string, number>
+  >({});
+
+  const documentState = useDocumentVisibility();
+
+  // Functions
+  const fetchPositions = useCallback(async () => {
+    const positions = await PositionsService.getPositions();
+
+    usePositionsStore.setState({ positions: positions });
+  }, []);
+
+  const handleDeletePosition = async (id: number) => {
+    await PositionsService.deletePosition(id);
+
+    usePositionsStore.setState({
+      positions: positions.filter((p) => p.id !== id),
+    });
+  };
+
+  // Effects
+  useEffect(() => {
+    if (documentState === "hidden") return;
+
+    fetchPositions();
+
+    return () => {
+      usePositionsStore.setState({ positions: [] });
+    };
+  }, [documentState, fetchPositions]);
+
+  const fetchMissingSymbolsInfo = async (symbolsToFetch: string[]) => {
+    const infos = await SymbolsService.getSymbolsInfo(symbolsToFetch);
+
+    setPositonsSymbolInfos((prev) => ({
+      ...prev,
+      ...infos,
+    }));
+  };
+
+  useEffect(() => {
+    const missingSymbols = positions
+      .map((alert) => alert.symbol)
+      .filter((symbol) => !positionsSymbolInfos[symbol]);
+
+    const uniqueMissingSymbols = [...new Set(missingSymbols)];
+
+    if (uniqueMissingSymbols.length === 0) return;
+
+    fetchMissingSymbolsInfo(uniqueMissingSymbols);
+  }, [positions, positionsSymbolInfos]);
+
+  const openPositions = useMemo(() => {
+    return positions.filter((p) => !p.endReason);
+  }, [positions]);
+
+  useEffect(() => {
+    if (!openPositions.length) return;
+
+    const allSymbols = openPositions.map((p) => p.symbol);
+
+    // TODO: Have a separate endpoint for real-time price updates instead of candle updates with 1m interval?
+    const candleUpdatesSubscription = CandlesService.subscribeToCandleUpdates(
+      allSymbols,
+      ["OneMinute"],
+      (symbolIntervalCandle) => {
+        const { symbol, candle } = symbolIntervalCandle;
+
+        setPositonsSymbolPrices((prev) => ({
+          ...prev,
+          [symbol]: candle.close,
+        }));
+      },
+    );
+
+    return () => {
+      candleUpdatesSubscription.unsubscribe();
+    };
+  }, [openPositions]);
+
+  // TODO: Test render when symbol info comes later than prices
   const renderOpenPositionRow = (position: Position) => {
+    const positionSymbolInfo = positionsSymbolInfos[position.symbol];
+    const positionSymbolCurrentPrice = positionsSymbolPrices[position.symbol];
+
     const { id, symbol, side, amount, price, tp } = position;
-    const { baseAsset, quoteAsset } = symbolInfo;
+    const { baseAsset, quoteAsset } = positionSymbolInfo ?? {
+      baseAsset: "",
+      quoteAsset: "",
+    };
 
-    const tpQuoteAsset = calculateAssetChange(side, amount, price, tp);
-    const formattedTpQuoteAsset = formatPrice(
-      tpQuoteAsset,
-      symbolInfo.priceFormat,
-    );
-    const tpPercentageChange = calculatePercentageChange(
-      tpQuoteAsset,
-      amount,
-      price,
-    );
-
-    const unrealizedQuoteAssetChange = calculateAssetChange(
+    const formattedAmount = positionSymbolInfo
+      ? formatPrice(amount, positionSymbolInfo.quantityFormat)
+      : "-";
+    const formattedPrice = positionSymbolInfo
+      ? formatPrice(price, positionSymbolInfo.priceFormat)
+      : "-";
+    const formattedCurrentPrice =
+      positionSymbolInfo && positionSymbolCurrentPrice
+        ? formatPrice(
+            positionSymbolCurrentPrice,
+            positionSymbolInfo.priceFormat,
+          )
+        : "-";
+    const formattedTp = positionSymbolInfo
+      ? formatPrice(tp, positionSymbolInfo.priceFormat)
+      : "-";
+    const tpQuoteAssetChange = calculateQuoteAssetAmountChange(
       side,
       amount,
       price,
-      currentPrice,
+      tp,
     );
-    const formattedUnrealizedQuoteAssetChange = formatPrice(
-      unrealizedQuoteAssetChange,
-      symbolInfo.priceFormat,
-    );
-    const unrealizedPercentageChange = calculatePercentageChange(
-      unrealizedQuoteAssetChange,
-      amount,
-      price,
-    );
+    const formattedTpQuoteAssetChange = positionSymbolInfo
+      ? formatPrice(tpQuoteAssetChange, positionSymbolInfo.priceFormat)
+      : "-";
+    const tpPercentageChange = calculatePercentageChange(side, price, tp);
+    const formattedTpPercentageChange = tpPercentageChange.toFixed(2);
+
+    const unrealizedQuoteAssetChange = positionSymbolCurrentPrice
+      ? calculateQuoteAssetAmountChange(
+          side,
+          amount,
+          price,
+          positionSymbolCurrentPrice,
+        )
+      : 0;
+    const formattedUnrealizedQuoteAssetChange = positionSymbolInfo
+      ? formatPrice(unrealizedQuoteAssetChange, positionSymbolInfo.priceFormat)
+      : "0";
+    const unrealizedPercentageChange = positionSymbolCurrentPrice
+      ? calculatePercentageChange(side, price, positionSymbolCurrentPrice)
+      : 0;
+    const formattedUnrealizedPercentageChange =
+      unrealizedPercentageChange.toFixed(2);
 
     return (
-      <TableRow key={id}>
+      <TableRow key={id} className="text-nowrap">
         <TableCell>{symbol}</TableCell>
         <TableCell>{side}</TableCell>
         <TableCell>
-          {amount} {baseAsset}
+          {formattedAmount} {baseAsset}
         </TableCell>
-        <TableCell>{formatPrice(price, symbolInfo.priceFormat)}</TableCell>
         <TableCell>
-          {tp}{" "}
+          {formattedPrice}/{formattedCurrentPrice}
+        </TableCell>
+        <TableCell>
+          {formattedTp}{" "}
           <span className="text-positive">
-            (+{formattedTpQuoteAsset} {quoteAsset}{" "}
-            {tpPercentageChange.toFixed(2)}%)
+            (+{formattedTpQuoteAssetChange} {quoteAsset}{" "}
+            {formattedTpPercentageChange}%)
           </span>
         </TableCell>
         <TableCell
           className={cn({
             "text-positive": unrealizedQuoteAssetChange > 0,
-            "text-destructive": unrealizedQuoteAssetChange < 0,
+            "text-negative": unrealizedQuoteAssetChange < 0,
           })}
         >
-          {formattedUnrealizedQuoteAssetChange} {quoteAsset}{" "}
-          {unrealizedPercentageChange.toFixed(2)}%
+          {!!positionSymbolCurrentPrice
+            ? `${formattedUnrealizedQuoteAssetChange} ${quoteAsset} ${formattedUnrealizedPercentageChange}%`
+            : "-"}
         </TableCell>
         <TableCell>
           <div className="flex gap-0.5">
             <Button variant="ghost" size="icon">
-              <Pencil className="size-4 text-primary" />
+              <Pencil className="size-4 text-muted-foreground" />
             </Button>
             <Button variant="ghost" size="icon">
               <CircleX className="size-4 text-destructive" />
             </Button>
-            <Button variant="ghost" size="icon">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleDeletePosition(id)}
+            >
               <Trash2 className="size-4 text-destructive" />
             </Button>
           </div>
@@ -158,52 +243,75 @@ function Positions() {
   };
 
   const renderEndedPositionRow = (position: Position) => {
+    const positionSymbolInfo = positionsSymbolInfos[position.symbol];
+
     const { id, symbol, side, amount, price, endReason, tp, endPrice } =
       position;
-    const { baseAsset, quoteAsset } = symbolInfo;
+    const { baseAsset, quoteAsset } = positionSymbolInfo ?? {
+      baseAsset: "",
+      quoteAsset: "",
+    };
 
-    const finalEndPrice = (endReason === "Filled" ? tp : endPrice)!;
+    const formattedAmount = positionSymbolInfo
+      ? formatPrice(amount, positionSymbolInfo.quantityFormat)
+      : "-";
+    const formattedPrice = positionSymbolInfo
+      ? formatPrice(price, positionSymbolInfo.priceFormat)
+      : "-";
 
-    const pnlQuoteAssetChange = calculateAssetChange(
+    const formattedTp = positionSymbolInfo
+      ? formatPrice(tp, positionSymbolInfo.priceFormat)
+      : "-";
+
+    const finalEndPrice = endPrice!;
+    const formattedEndPrice = positionSymbolInfo
+      ? formatPrice(finalEndPrice, positionSymbolInfo.priceFormat)
+      : "-";
+
+    const pnlQuoteAssetChange = calculateQuoteAssetAmountChange(
       side,
       amount,
       price,
       finalEndPrice,
     );
-    const formattedPnlQuoteAssetChange = formatPrice(
-      pnlQuoteAssetChange,
-      symbolInfo.priceFormat,
-    );
+    const formattedPnlQuoteAssetChange = positionSymbolInfo
+      ? formatPrice(pnlQuoteAssetChange, positionSymbolInfo.priceFormat)
+      : "-";
     const pnlPercentageChange = calculatePercentageChange(
-      pnlQuoteAssetChange,
-      amount,
+      side,
       price,
+      finalEndPrice,
     );
+    const formattedPnlPercentageChange = pnlPercentageChange.toFixed(2);
 
     return (
-      <TableRow key={id}>
+      <TableRow key={id} className="text-nowrap">
         <TableCell>{symbol}</TableCell>
         <TableCell>{side}</TableCell>
         <TableCell>
-          {amount} {baseAsset}
+          {formattedAmount} {baseAsset}
         </TableCell>
-        <TableCell>{formatPrice(price, symbolInfo.priceFormat)}</TableCell>
+        <TableCell>{formattedPrice}</TableCell>
         <TableCell>{endReason}</TableCell>
         <TableCell>
-          {tp}/{finalEndPrice}
+          {formattedTp}/{formattedEndPrice}
         </TableCell>
         <TableCell
           className={cn({
             "text-positive": pnlQuoteAssetChange > 0,
-            "text-destructive": pnlQuoteAssetChange < 0,
+            "text-negative": pnlQuoteAssetChange < 0,
           })}
         >
           {formattedPnlQuoteAssetChange} {quoteAsset}{" "}
-          {pnlPercentageChange.toFixed(2)}%
+          {formattedPnlPercentageChange}%
         </TableCell>
         <TableCell>
           <div className="flex gap-0.5">
-            <Button variant="ghost" size="icon">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleDeletePosition(id)}
+            >
               <Trash2 className="size-4 text-destructive" />
             </Button>
           </div>
@@ -212,26 +320,60 @@ function Positions() {
     );
   };
 
-  const openPositions = positions.filter((p) => !p.endReason);
   const endedPositions = positions.filter((p) => !!p.endReason);
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-3">
-        <h2 className="text-xl font-semibold">Open</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Open</h2>
+          <Dialog
+            open={showAddPositionForm}
+            onOpenChange={setShowAddPositionForm}
+          >
+            <DialogTrigger asChild>
+              <Button>
+                <CirclePlus />
+                Add position
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add position</DialogTitle>
+              </DialogHeader>
+              <PositionsForm
+                onPositionCreated={() => {
+                  fetchPositions();
+
+                  setShowAddPositionForm(false);
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Symbol</TableHead>
               <TableHead>Side</TableHead>
               <TableHead>Amount</TableHead>
-              <TableHead>Price</TableHead>
+              <TableHead>Entry price/Current price</TableHead>
               <TableHead>TP</TableHead>
               <TableHead>Unrealized PnL</TableHead>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>{openPositions.map(renderOpenPositionRow)}</TableBody>
+          <TableBody>
+            {!openPositions.length ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center">
+                  No open positions
+                </TableCell>
+              </TableRow>
+            ) : (
+              openPositions.map(renderOpenPositionRow)
+            )}
+          </TableBody>
         </Table>
       </div>
       <div className="flex flex-col gap-3">
@@ -249,7 +391,17 @@ function Positions() {
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>{endedPositions.map(renderEndedPositionRow)}</TableBody>
+          <TableBody>
+            {!endedPositions.length ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center">
+                  No ended positions
+                </TableCell>
+              </TableRow>
+            ) : (
+              endedPositions.map(renderEndedPositionRow)
+            )}
+          </TableBody>
         </Table>
       </div>
     </div>

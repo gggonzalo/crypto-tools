@@ -39,6 +39,9 @@ export default {
         positive: {
           DEFAULT: "hsl(var(--positive))",
         },
+        negative: {
+          DEFAULT: "hsl(var(--negative))",
+        },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
