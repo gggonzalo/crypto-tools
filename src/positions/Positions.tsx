@@ -195,7 +195,7 @@ function Positions() {
       unrealizedPercentageChange.toFixed(2);
 
     return (
-      <TableRow key={id} className="text-nowrap">
+      <TableRow key={id}>
         <TableCell>{symbol}</TableCell>
         <TableCell>{side}</TableCell>
         <TableCell>
@@ -285,7 +285,7 @@ function Positions() {
     const formattedPnlPercentageChange = pnlPercentageChange.toFixed(2);
 
     return (
-      <TableRow key={id} className="text-nowrap">
+      <TableRow key={id}>
         <TableCell>{symbol}</TableCell>
         <TableCell>{side}</TableCell>
         <TableCell>

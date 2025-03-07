@@ -100,17 +100,17 @@ function AlertsTable() {
             {alert.symbol}
           </span>
         </TableCell>
-        <TableCell className="text-nowrap">
+        <TableCell>
           {alert.type === "Price" ? "Price alert" : "RSI alert"}
         </TableCell>
-        <TableCell className="flex flex-col text-nowrap">
+        <TableCell className="flex flex-col">
           <span>{valueOnCreation}</span>
           <span className="text-xs text-muted-foreground">
             {new Date(alert.createdAt).toLocaleString()}
           </span>
         </TableCell>
-        <TableCell className="text-nowrap">{valueTarget}</TableCell>
-        <TableCell className="text-nowrap">{alert.status}</TableCell>
+        <TableCell>{valueTarget}</TableCell>
+        <TableCell>{alert.status}</TableCell>
         <TableCell>
           <Button
             variant="ghost"
