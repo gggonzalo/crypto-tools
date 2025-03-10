@@ -36,8 +36,6 @@ function AlertsTable() {
   }, [alerts, areOtherPairsAlertsHidden, symbol]);
 
   const handleAlertSymbolClick = (clickedSymbol: string) => {
-    if (clickedSymbol === symbol) return;
-
     useAlertsStore.setState({ symbol: clickedSymbol });
 
     window.scrollTo({ top: 0, behavior: "smooth" });
