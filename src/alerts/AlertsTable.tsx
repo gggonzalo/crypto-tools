@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useEffect, useMemo, useState } from "react";
 import AlertsService from "@/services/AlertsService";
 import SymbolsService from "@/services/SymbolsService";
-import { formatPrice } from "@/utils";
+import { formatPrice, mapIntervalToLabel } from "@/utils";
 import { SymbolInfo } from "@/common/types";
 import { Alert } from "./types";
 
@@ -98,6 +98,9 @@ function AlertsTable() {
             onClick={() => handleAlertSymbolClick(alert.symbol)}
           >
             {alert.symbol}
+            {alert.type === "Rsi"
+              ? `, ${mapIntervalToLabel(alert.interval)}`
+              : null}
           </span>
         </TableCell>
         <TableCell>
