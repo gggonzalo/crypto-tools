@@ -14,7 +14,7 @@ import { useEffect, useMemo, useState } from "react";
 import AlertsService from "@/services/AlertsService";
 import SymbolsService from "@/services/SymbolsService";
 import { formatPrice, mapIntervalToLabel } from "@/utils";
-import { SymbolInfo } from "@/common/types";
+import { Interval, SymbolInfo } from "@/common/types";
 import { Alert } from "./types";
 
 function AlertsTable() {
@@ -35,8 +35,14 @@ function AlertsTable() {
       : sortedAlerts;
   }, [alerts, areOtherPairsAlertsHidden, symbol]);
 
-  const handleAlertSymbolClick = (clickedSymbol: string) => {
-    useAlertsStore.setState({ symbol: clickedSymbol });
+  const handleAlertTickerClick = (
+    selectedSymbol: string,
+    selectedInterval?: Interval,
+  ) => {
+    useAlertsStore.setState({
+      symbol: selectedSymbol,
+      interval: selectedInterval ?? "OneMinute",
+    });
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -93,7 +99,11 @@ function AlertsTable() {
         <TableCell>
           <span
             className="cursor-pointer font-semibold"
-            onClick={() => handleAlertSymbolClick(alert.symbol)}
+            onClick={() => {
+              if (alert.type === "Rsi")
+                handleAlertTickerClick(alert.symbol, alert.interval);
+              else handleAlertTickerClick(alert.symbol);
+            }}
           >
             {alert.symbol}
             {alert.type === "Rsi"
@@ -145,7 +155,7 @@ function AlertsTable() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Symbol</TableHead>
+            <TableHead>Ticker</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Value On Creation</TableHead>
             <TableHead>Value Target</TableHead>
