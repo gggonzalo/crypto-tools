@@ -32,19 +32,9 @@ export default class CandlesService {
       this.notifySubscribers(connectionId, localReply);
     });
 
-    connection
-      .start()
-      .then(() => {
-        connection.invoke("SubscribeToCandleUpdates", symbols, intervals);
-      })
-      .catch(() => {
-        toast({
-          title: "Error",
-          description:
-            "An error occurred while trying to start the candles stream.",
-          variant: "destructive",
-        });
-      });
+    connection.start().then(() => {
+      connection.invoke("SubscribeToCandleUpdates", symbols, intervals);
+    });
 
     return connection;
   }
