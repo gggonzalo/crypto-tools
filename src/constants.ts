@@ -6,33 +6,33 @@ interface SymbolDisplayInfo {
 
 export const symbolsDisplayInfo: Record<string, SymbolDisplayInfo> = {
   BTCUSDT: {
-    logo: "https://cryptologos.cc/logos/bitcoin-btc-logo.svg",
+    logo: "crypto-logos/btc.svg",
   },
   ETHUSDT: {
-    logo: "https://cryptologos.cc/logos/ethereum-eth-logo.svg",
+    logo: "crypto-logos/eth.svg",
   },
   BNBUSDT: {
-    logo: "https://cryptologos.cc/logos/bnb-bnb-logo.svg",
+    logo: "crypto-logos/bnb.svg",
   },
   ADAUSDT: {
-    logo: "https://cryptologos.cc/logos/cardano-ada-logo.svg",
+    logo: "crypto-logos/ada.svg",
   },
   DOGEUSDT: {
-    logo: "https://cryptologos.cc/logos/dogecoin-doge-logo.svg",
+    logo: "crypto-logos/doge.svg",
   },
   DOTUSDT: {
-    logo: "https://cryptologos.cc/logos/polkadot-new-dot-logo.svg",
+    logo: "crypto-logos/dot.svg",
   },
   UNIUSDT: {
-    logo: "https://cryptologos.cc/logos/uniswap-uni-logo.svg",
+    logo: "crypto-logos/uni.svg",
   },
   LINKUSDT: {
-    logo: "https://cryptologos.cc/logos/chainlink-link-logo.svg",
+    logo: "crypto-logos/link.svg",
   },
   ATOMUSDT: {
-    logo: "https://cryptologos.cc/logos/cosmos-atom-logo.svg",
+    logo: "crypto-logos/atom.svg",
   },
   USDCUSDT: {
-    logo: "https://cryptologos.cc/logos/usd-coin-usdc-logo.svg",
+    logo: "crypto-logos/usdc.svg",
   },
 };
